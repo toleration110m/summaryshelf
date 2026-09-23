@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>قفسه کتاب من</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="mark">ق</span>
+        قفسه کتاب من
+      </a>
+      <div class="nav-links">
+        <a href="index.html">خانه</a>
+        <a href="#books">کتاب‌ها</a>
+      </div>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="icon-btn" aria-label="تغییر پوسته"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <h1 class="hero-title">قفسه کتاب من</h1>
+        <p class="hero-tagline">خلاصه‌ها و برداشت‌های شخصی من از کتاب‌هایی که خوانده‌ام.</p>
+        <div class="search-box-wrap">
+          <input
+            type="text"
+            id="search"
+            class="search-box"
+            placeholder="جستجو در عنوان، نویسنده یا موضوع..."
+            autocomplete="off"
+          />
+          <span id="search-icon"></span>
+        </div>
+      </div>
+      <div class="book-stack" aria-hidden="true">
+        <div class="spine" style="background: linear-gradient(155deg,#332f28,#1c1a15); color:#e8e2d0;">عادت‌های اتمی</div>
+        <div class="spine" style="background: linear-gradient(155deg,#4a5877,#2c3550); color:#eceaf0;">کار عمیق</div>
+        <div class="spine" style="background: linear-gradient(155deg,#c98a63,#a1583a); color:#fff8ef;">انسان خردمند</div>
+        <div class="spine" style="background: linear-gradient(155deg,#e9d7a8,#cfa94f); color:#3a2b0c;">شازده کوچولو</div>
+      </div>
+    </section>
+
+    <div id="pills" class="pills"></div>
+
+    <div id="books" class="section-row">
+      <h2 class="section-title">آخرین کتاب‌ها</h2>
+    </div>
+    <div id="book-grid" class="book-grid">
+      <p class="empty-state">در حال بارگذاری...</p>
+    </div>
+
+    <footer class="site-footer">ساخته شده با Markdown و Git.</footer>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('search-icon').innerHTML = ICONS.search;
+
+    let allBooks = [];
+    let activeCategory = 'همه';
+
+    function cardHTML(b) {
+      const cover = coverStyle(b.slug);
+      const sub = [b.meta.author].filter(Boolean).join(' ');
+      const meta = [b.meta.read_minutes ? `${b.meta.read_minutes} دقیقه` : null, b.meta.year_read]
+        .filter(Boolean)
+        .join(' · ');
+      return `
+        <a class="book-card" href="book.html?b=${encodeURIComponent(b.slug)}">
+          <div class="cover" style="background:${cover.bg}; color:${cover.text};">
+            ${b.meta.category ? `<span class="cover-tag">${b.meta.category}</span>` : ''}
+            <span class="cover-title">${b.meta.title || b.slug}</span>
+          </div>
+          <div class="card-body">
+            <p class="c-title">${b.meta.title || b.slug}</p>
+            <p class="c-author">${sub}</p>
+            <p class="c-quote">${b.meta.quote ? '«' + b.meta.quote + '»' : ''}</p>
+            <div class="card-meta">
+              <span>${meta}</span>
+              <span class="arrow">${ICONS.arrowLeft}</span>
+            </div>
+          </div>
+        </a>`;
+    }
+
+    function renderGrid() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const filtered = allBooks.filter((b) => {
+        const catOk = activeCategory === 'همه' || b.meta.category === activeCategory;
+        if (!catOk) return false;
+        if (!q) return true;
+        const hay = [b.meta.title, b.meta.author, b.meta.category, ...(b.meta.tags || [])]
+          .join(' ')
+          .toLowerCase();
+        return hay.includes(q);
+      });
+      const gridEl = document.getElementById('book-grid');
+      gridEl.innerHTML = filtered.length
+        ? filtered.map(cardHTML).join('')
+        : '<p class="empty-state">کتابی یافت نشد.</p>';
+    }
+
+    function renderPills() {
+      const cats = ['همه', ...new Set(allBooks.map((b) => b.meta.category).filter(Boolean))];
+      document.getElementById('pills').innerHTML = cats
+        .map(
+          (c) =>
+            `<button class="pill ${c === activeCategory ? 'active' : ''}" data-cat="${c}">${c}</button>`
+        )
+        .join('');
+      document.querySelectorAll('.pill').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeCategory = btn.dataset.cat;
+          renderPills();
+          renderGrid();
+        });
+      });
+    }
+
+    fetchAllBooks()
+      .then((books) => {
+        allBooks = books;
+        renderPills();
+        renderGrid();
+      })
+      .catch((err) => {
+        document.getElementById('book-grid').innerHTML =
+          `<p class="empty-state">خطا در بارگذاری کتاب‌ها: ${err.message}</p>`;
+      });
+
+    document.getElementById('search').addEventListener('input', renderGrid);
+  </script>
+</body>
+</html>

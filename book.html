@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>خلاصه کتاب</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="mark">ق</span>
+        قفسه کتاب من
+      </a>
+      <div class="nav-links">
+        <a href="index.html">خانه</a>
+        <a href="index.html#books">کتاب‌ها</a>
+      </div>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="icon-btn" aria-label="تغییر پوسته"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <a class="back-link" href="index.html"><span id="back-icon"></span> بازگشت به قفسه</a>
+    <div id="content">
+      <p class="empty-state">در حال بارگذاری...</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('back-icon').innerHTML = ICONS.arrowRight;
+
+    const SECTION_MAP = {
+      'خلاصه': 'summary',
+      'نکات کلیدی': 'key-ideas',
+      'برداشت من': 'takeaways',
+      'برداشت شخصی': 'takeaways',
+    };
+
+    function tagFirstList(html, cls) {
+      return html.replace(/<(ul|ol)>/, `<$1 class="${cls}">`);
+    }
+
+    function renderSection(sec) {
+      const kind = SECTION_MAP[sec.heading] || 'generic';
+      const html = marked.parse(sec.content);
+      if (kind === 'summary') {
+        return `<section class="block"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+      }
+      if (kind === 'key-ideas') {
+        return `<section class="block"><h2>${sec.heading}</h2>${tagFirstList(html, 'key-ideas')}</section>`;
+      }
+      if (kind === 'takeaways') {
+        return `<section class="block"><h2>${sec.heading}</h2>${tagFirstList(html, 'takeaways')}</section>`;
+      }
+      return `<section class="block"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+    }
+
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('b');
+    const contentEl = document.getElementById('content');
+
+    async function render() {
+      if (!slug) {
+        contentEl.innerHTML = '<p class="empty-state">کتابی مشخص نشده است.</p>';
+        return;
+      }
+      const [book, manifest] = await Promise.all([fetchBook(slug), fetchManifest()]);
+      const { meta, body } = book;
+      document.title = meta.title || 'خلاصه کتاب';
+
+      const cover = coverStyle(slug);
+      const sections = splitSections(body).map(renderSection).join('');
+      const stars = starString(meta.rating);
+
+      const metaItems = [
+        meta.category ? `<span class="pill-tag">${meta.category}</span>` : '',
+        meta.year_read ? `<span class="item">${ICONS.calendar} ${meta.year_read}</span>` : '',
+        meta.date_read ? `<span class="item">${ICONS.calendar} خواندم: ${meta.date_read}</span>` : '',
+        meta.read_minutes ? `<span class="item">${ICONS.clock} ${meta.read_minutes} دقیقه مطالعه</span>` : '',
+      ]
+        .filter(Boolean)
+        .join('');
+
+      contentEl.innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-cover" style="background:${cover.bg}; color:${cover.text};">
+            <span class="cover-title">${meta.title || slug}</span>
+          </div>
+          <div>
+            <h1 class="book-title">${meta.title || slug}</h1>
+            <p class="book-byline">${meta.author || ''}</p>
+            <div class="meta-row">${metaItems}</div>
+            ${stars ? `<div class="rating">${stars} <span class="num">${meta.rating}/۵</span></div>` : ''}
+            ${meta.quote ? `<div class="quote-box">«${meta.quote}»</div>` : ''}
+            ${sections}
+          </div>
+        </div>
+      `;
+
+      // Prev / next navigation based on manifest order.
+      const idx = manifest.indexOf(slug);
+      const prevSlug = idx > 0 ? manifest[idx - 1] : null;
+      const nextSlug = idx >= 0 && idx < manifest.length - 1 ? manifest[idx + 1] : null;
+      const footer = document.createElement('div');
+      footer.className = 'detail-footer';
+      footer.innerHTML = `
+        ${prevSlug ? `<a href="book.html?b=${prevSlug}">${ICONS.arrowRight} کتاب قبلی</a>` : '<span></span>'}
+        ${nextSlug ? `<a href="book.html?b=${nextSlug}">کتاب بعدی ${ICONS.arrowLeft}</a>` : '<span></span>'}
+      `;
+      document.querySelector('.wrap').appendChild(footer);
+    }
+
+    render().catch((err) => {
+      contentEl.innerHTML = `<p class="empty-state">خطا: ${err.message}</p>`;
+    });
+  </script>
+</body>
+</html>
