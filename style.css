@@ -391,7 +391,7 @@ a { color: inherit; }
 
 .block { margin-bottom: 2.2rem; }
 .block h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.9rem; }
-.block .prose p { color: var(--ink-soft); margin: 0 0 1rem; }
+.block .prose p { color: var(--ink-soft); margin: 0 0 1rem; text-align: justify; text-justify:inter-word;}
 
 ol.key-ideas { list-style: none; margin: 0; padding: 0; counter-reset: idea; }
 ol.key-ideas li {
