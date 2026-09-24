@@ -68,15 +68,19 @@
 
     function cardHTML(b) {
       const cover = coverStyle(b.slug);
+      const hasImage = !!b.meta.cover;
+      const coverStyleAttr = hasImage
+        ? `background-image:url('${b.meta.cover}'); background-size:cover; background-position:center;`
+        : `background:${cover.bg}; color:${cover.text};`;
       const sub = [b.meta.author].filter(Boolean).join(' ');
       const meta = [b.meta.read_minutes ? `${b.meta.read_minutes} دقیقه` : null, b.meta.year_read]
         .filter(Boolean)
         .join(' · ');
       return `
         <a class="book-card" href="book.html?b=${encodeURIComponent(b.slug)}">
-          <div class="cover" style="background:${cover.bg}; color:${cover.text};">
+          <div class="cover" style="${coverStyleAttr}">
             ${b.meta.category ? `<span class="cover-tag">${b.meta.category}</span>` : ''}
-            <span class="cover-title">${b.meta.title || b.slug}</span>
+            ${hasImage ? '' : `<span class="cover-title">${b.meta.title || b.slug}</span>`}
           </div>
           <div class="card-body">
             <p class="c-title">${b.meta.title || b.slug}</p>

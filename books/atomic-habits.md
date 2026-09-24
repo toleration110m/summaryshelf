@@ -8,6 +8,7 @@ read_minutes: 12
 rating: 5
 tags: [توسعه فردی, عادت]
 quote: تو به سطح هدف‌هایت نمی‌رسی؛ به سطح سیستم‌هایت سقوط می‌کنی.
+cover: covers/cover.png
 ---
 
 ## خلاصه

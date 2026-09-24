@@ -75,6 +75,10 @@
       document.title = meta.title || 'خلاصه کتاب';
 
       const cover = coverStyle(slug);
+      const hasImage = !!meta.cover;
+      const coverStyleAttr = hasImage
+        ? `background-image:url('${meta.cover}'); background-size:cover; background-position:center;`
+        : `background:${cover.bg}; color:${cover.text};`;
       const sections = splitSections(body).map(renderSection).join('');
       const stars = starString(meta.rating);
 
@@ -89,8 +93,8 @@
 
       contentEl.innerHTML = `
         <div class="detail-grid">
-          <div class="detail-cover" style="background:${cover.bg}; color:${cover.text};">
-            <span class="cover-title">${meta.title || slug}</span>
+          <div class="detail-cover" style="${coverStyleAttr}">
+            ${hasImage ? '' : `<span class="cover-title">${meta.title || slug}</span>`}
           </div>
           <div>
             <h1 class="book-title">${meta.title || slug}</h1>
