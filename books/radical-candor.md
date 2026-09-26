@@ -5,7 +5,7 @@ category: مدیریت
 year_read: 2017
 date_read: 1405/08/01
 read_minutes: 25
-rating: 5/5
+rating: 5
 tags: [مدیریت, منابع انسانی, تعامل موثر]
 quote: چگونه رئیس قاطعی باشیم و انسانیتمان را از دست ندهیم
 cover: covers/KimScott.jpg

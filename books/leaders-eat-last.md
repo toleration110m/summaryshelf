@@ -5,7 +5,7 @@ category: مدیریت
 year_read: 2014
 date_read: 1405/02/01
 read_minutes: 12
-rating: 5/5
+rating: 5
 tags: [مدیریت, اخلاق]
 quote: 
 cover: covers/SimonSinek.jpg
