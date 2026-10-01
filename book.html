@@ -46,19 +46,27 @@
       return html.replace(/<(ul|ol)>/, `<$1 class="${cls}">`);
     }
 
-    function renderSection(sec) {
+    function renderSection(sec, id) {
       const kind = SECTION_MAP[sec.heading] || 'generic';
       const html = marked.parse(sec.content);
       if (kind === 'summary') {
-        return `<section class="block"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+        return `<section class="block" id="${id}"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
       }
       if (kind === 'key-ideas') {
-        return `<section class="block"><h2>${sec.heading}</h2>${tagFirstList(html, 'key-ideas')}</section>`;
+        return `<section class="block" id="${id}"><h2>${sec.heading}</h2>${tagFirstList(html, 'key-ideas')}</section>`;
       }
       if (kind === 'takeaways') {
-        return `<section class="block"><h2>${sec.heading}</h2>${tagFirstList(html, 'takeaways')}</section>`;
+        return `<section class="block" id="${id}"><h2>${sec.heading}</h2>${tagFirstList(html, 'takeaways')}</section>`;
       }
-      return `<section class="block"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+      return `<section class="block" id="${id}"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+    }
+
+    function tocHTML(sections) {
+      if (sections.length < 2) return '';
+      const items = sections
+        .map((sec, i) => `<li><a href="#sec-${i}">${sec.heading}</a></li>`)
+        .join('');
+      return `<nav class="toc"><p class="toc-title">فهرست مطالب</p><ul>${items}</ul></nav>`;
     }
 
     const params = new URLSearchParams(location.search);
@@ -79,7 +87,9 @@
       const coverStyleAttr = hasImage
         ? `background-image:url('${meta.cover}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
-      const sections = splitSections(body).map(renderSection).join('');
+      const rawSections = splitSections(body);
+      const toc = tocHTML(rawSections);
+      const sections = rawSections.map((sec, i) => renderSection(sec, `sec-${i}`)).join('');
       const stars = starString(meta.rating);
 
       const metaItems = [
@@ -102,6 +112,7 @@
             <div class="meta-row">${metaItems}</div>
             ${stars ? `<div class="rating">${stars} <span class="num">${meta.rating}/۵</span></div>` : ''}
             ${meta.quote ? `<div class="quote-box">«${meta.quote}»</div>` : ''}
+            ${toc}
             ${sections}
           </div>
         </div>
