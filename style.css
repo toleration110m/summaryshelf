@@ -1,5 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
 
+/* IranYekan is a licensed commercial font, not available on any public CDN.
+   Drop the webfont files you own into /fonts (see README) and these rules
+   will pick them up automatically. Until then, the site falls back to
+   Vazirmatn (free) further down the font stack, so nothing breaks. */
+@font-face {
+  font-family: 'IranYekan';
+  src: url('fonts/IranYekan-Regular.woff2') format('woff2'),
+       url('fonts/IranYekan-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IranYekan';
+  src: url('fonts/IranYekan-Medium.woff2') format('woff2'),
+       url('fonts/IranYekan-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IranYekan';
+  src: url('fonts/IranYekan-Bold.woff2') format('woff2'),
+       url('fonts/IranYekan-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IranYekan';
+  src: url('fonts/IranYekan-ExtraBold.woff2') format('woff2'),
+       url('fonts/IranYekan-ExtraBold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --paper: #f7f4ed;
   --paper-raised: #ffffff;
@@ -12,6 +49,8 @@
   --gold-soft: #f4e9d3;
   --line: #e2dbc9;
   --line-soft: #ece6d6;
+  --purple: #6b4e8e;
+  --blue: #3d5a99;
   --shadow: 0 10px 30px -18px rgba(34, 31, 26, 0.35);
   color-scheme: light;
 }
@@ -28,6 +67,8 @@
   --gold-soft: #33291a;
   --line: #34301f;
   --line-soft: #2a2619;
+  --purple: #b093d1;
+  --blue: #7fa0d9;
   --shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
@@ -45,6 +86,8 @@
     --gold-soft: #33291a;
     --line: #34301f;
     --line-soft: #2a2619;
+    --purple: #b093d1;
+    --blue: #7fa0d9;
     color-scheme: dark;
   }
 }
@@ -57,13 +100,32 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+  font-family: 'IranYekan', 'Vazirmatn', 'Tahoma', sans-serif;
   line-height: 1.75;
   direction: rtl;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
 a { color: inherit; }
+
+/* ---------- Heading hierarchy ---------- */
+
+h1 {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--purple);
+}
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--blue);
+}
 
 .wrap {
   max-width: 1040px;
