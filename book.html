@@ -46,27 +46,96 @@
       return html.replace(/<(ul|ol)>/, `<$1 class="${cls}">`);
     }
 
-    function renderSection(sec, id) {
-      const kind = SECTION_MAP[sec.heading] || 'generic';
-      const html = marked.parse(sec.content);
-      if (kind === 'summary') {
-        return `<section class="block" id="${id}"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
-      }
-      if (kind === 'key-ideas') {
-        return `<section class="block" id="${id}"><h2>${sec.heading}</h2>${tagFirstList(html, 'key-ideas')}</section>`;
-      }
-      if (kind === 'takeaways') {
-        return `<section class="block" id="${id}"><h2>${sec.heading}</h2>${tagFirstList(html, 'takeaways')}</section>`;
-      }
-      return `<section class="block" id="${id}"><h2>${sec.heading}</h2><div class="prose">${html}</div></section>`;
+    // Scans the raw markdown for #, ##, and ### headings in document order,
+    // assigning each a stable, hierarchical anchor id (e.g. sec-0, sec-0-1,
+    // sec-0-1-0) based on its nearest preceding heading of a shallower level.
+    function buildOutline(body) {
+      const outline = [];
+      const path = []; // stack of {level, id} ancestors currently "open"
+      const siblingCount = {}; // parentId ('root' at top) -> next sibling index
+
+      body.split('\n').forEach((line) => {
+        const m = line.match(/^(#{1,3})\s+(.+)$/);
+        if (!m) return;
+        const level = m[1].length;
+        const heading = m[2].trim();
+
+        while (path.length && path[path.length - 1].level >= level) path.pop();
+        const parentId = path.length ? path[path.length - 1].id : 'root';
+
+        siblingCount[parentId] = siblingCount[parentId] || 0;
+        const idx = siblingCount[parentId]++;
+        const id = (parentId === 'root' ? 'sec' : parentId) + '-' + idx;
+
+        path.push({ level, id });
+        outline.push({ level, heading, id, parentId: parentId === 'root' ? null : parentId });
+      });
+      return outline;
     }
 
-    function tocHTML(sections) {
-      if (sections.length < 2) return '';
-      const items = sections
-        .map((sec, i) => `<li><a href="#sec-${i}">${sec.heading}</a></li>`)
-        .join('');
-      return `<nav class="toc"><p class="toc-title">فهرست مطالب</p><ul>${items}</ul></nav>`;
+    // Turns the flat outline into a real tree (arbitrary depth) using parentId.
+    function buildTocTree(outline) {
+      const nodes = {};
+      const roots = [];
+      outline.forEach((item) => {
+        nodes[item.id] = { heading: item.heading, id: item.id, level: item.level, children: [] };
+      });
+      outline.forEach((item) => {
+        if (item.parentId && nodes[item.parentId]) {
+          nodes[item.parentId].children.push(nodes[item.id]);
+        } else {
+          roots.push(nodes[item.id]);
+        }
+      });
+      return roots;
+    }
+
+    function findNode(tree, id) {
+      for (const node of tree) {
+        if (node.id === id) return node;
+        const found = findNode(node.children, id);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function renderSection(sec, id, h3Ids) {
+      const kind = SECTION_MAP[sec.heading] || 'generic';
+      let html = marked.parse(sec.content);
+      if (h3Ids && h3Ids.length) {
+        let i = 0;
+        html = html.replace(/<h3>/g, () => `<h3 id="${h3Ids[i++] || ''}">`);
+      }
+      const Tag = sec.level === 1 ? 'h1' : 'h2';
+      if (kind === 'summary') {
+        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}><div class="prose">${html}</div></section>`;
+      }
+      if (kind === 'key-ideas') {
+        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}>${tagFirstList(html, 'key-ideas')}</section>`;
+      }
+      if (kind === 'takeaways') {
+        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}>${tagFirstList(html, 'takeaways')}</section>`;
+      }
+      return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}><div class="prose">${html}</div></section>`;
+    }
+
+    function countTocNodes(nodes) {
+      return nodes.reduce((n, t) => n + 1 + countTocNodes(t.children), 0);
+    }
+
+    function renderTocNode(node) {
+      const cls = `toc-lvl${node.level}`;
+      const sub = node.children.length
+        ? `<ul class="toc-sub">${node.children.map(renderTocNode).join('')}</ul>`
+        : '';
+      return `<li class="${cls}"><a href="#${node.id}">${node.heading}</a>${sub}</li>`;
+    }
+
+    function tocHTML(tree) {
+      if (countTocNodes(tree) < 2) return '';
+      return `<nav class="toc"><p class="toc-title">فهرست مطالب</p><ul>${tree
+        .map(renderTocNode)
+        .join('')}</ul></nav>`;
     }
 
     const params = new URLSearchParams(location.search);
@@ -88,8 +157,22 @@
         ? `background-image:url('${meta.cover}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
       const rawSections = splitSections(body);
-      const toc = tocHTML(rawSections);
-      const sections = rawSections.map((sec, i) => renderSection(sec, `sec-${i}`)).join('');
+      const outline = buildOutline(body);
+      const tree = buildTocTree(outline);
+      const toc = tocHTML(tree);
+      // rawSections (split on # / ##) and blockOutline (outline filtered to
+      // level <= 2) walk the same heading lines in the same order.
+      const blockOutline = outline.filter((o) => o.level <= 2);
+      const sections = rawSections
+        .map((sec, i) => {
+          const blockItem = blockOutline[i];
+          const id = blockItem ? blockItem.id : `sec-${i}`;
+          const h3Ids = blockItem
+            ? outline.filter((o) => o.level === 3 && o.parentId === blockItem.id).map((o) => o.id)
+            : [];
+          return renderSection(sec, id, h3Ids);
+        })
+        .join('');
       const stars = starString(meta.rating);
 
       const metaItems = [
