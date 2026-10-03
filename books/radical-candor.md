@@ -3,7 +3,7 @@ title: صراحت تمام عیار
 author: کیم اسکات
 category: مدیریت
 year_publish: 2017
-date_read: 1405/08/01
+date_read: در حال تکمیل
 read_minutes: 25
 rating: 5
 tags: [مدیریت, منابع انسانی, تعامل موثر]
