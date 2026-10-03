@@ -89,6 +89,7 @@ const ICONS = {
   tag: '<svg class="icon" viewBox="0 0 24 24"><path d="M11.5 3.5H5a1.5 1.5 0 0 0-1.5 1.5v6.5L13 21l8-8-9.5-9.5z"/><circle cx="8.2" cy="8.2" r="1.3"/></svg>',
   arrowLeft: '<svg class="icon" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
   arrowRight: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  arrowUp: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
 };
 
 function starString(rating) {
@@ -145,5 +146,26 @@ function initNavHeightVar() {
   }
 }
 
+/* ---------------- Back-to-top button ---------------- */
+
+function initBackToTop() {
+  const btn = document.createElement('button');
+  btn.className = 'back-to-top';
+  btn.setAttribute('aria-label', 'برو به بالای صفحه');
+  btn.innerHTML = ICONS.arrowUp;
+  document.body.appendChild(btn);
+
+  const toggle = () => {
+    btn.classList.toggle('visible', window.scrollY > 400);
+  };
+  toggle();
+  window.addEventListener('scroll', toggle, { passive: true });
+
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', initTheme);
 document.addEventListener('DOMContentLoaded', initNavHeightVar);
+document.addEventListener('DOMContentLoaded', initBackToTop);
