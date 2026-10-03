@@ -46,16 +46,17 @@
       return html.replace(/<(ul|ol)>/, `<$1 class="${cls}">`);
     }
 
-    // Scans the raw markdown for #, ##, and ### headings in document order,
-    // assigning each a stable, hierarchical anchor id (e.g. sec-0, sec-0-1,
-    // sec-0-1-0) based on its nearest preceding heading of a shallower level.
+    // Scans the raw markdown for #, ##, ### and #### headings in document
+    // order, assigning each a stable, hierarchical anchor id (e.g. sec-0,
+    // sec-0-1, sec-0-1-0, sec-0-1-0-2) based on its nearest preceding
+    // heading of a shallower level.
     function buildOutline(body) {
       const outline = [];
       const path = []; // stack of {level, id} ancestors currently "open"
       const siblingCount = {}; // parentId ('root' at top) -> next sibling index
 
       body.split('\n').forEach((line) => {
-        const m = line.match(/^(#{1,3})\s+(.+)$/);
+        const m = line.match(/^(#{1,4})\s+(.+)$/);
         if (!m) return;
         const level = m[1].length;
         const heading = m[2].trim();
@@ -99,12 +100,17 @@
       return null;
     }
 
-    function renderSection(sec, id, h3Ids) {
+    function renderSection(sec, id, subHeadings) {
       const kind = SECTION_MAP[sec.heading] || 'generic';
       let html = marked.parse(sec.content);
-      if (h3Ids && h3Ids.length) {
+      if (subHeadings && subHeadings.length) {
         let i = 0;
-        html = html.replace(/<h3>/g, () => `<h3 id="${h3Ids[i++] || ''}">`);
+        // ### and #### become <h3>/<h4> via marked, in the same document
+        // order as subHeadings, so we can assign ids positionally.
+        html = html.replace(/<h[34]>/g, (tag) => {
+          const sub = subHeadings[i++];
+          return sub ? tag.replace('>', ` id="${sub.id}">`) : tag;
+        });
       }
       const Tag = sec.level === 1 ? 'h1' : 'h2';
       if (kind === 'summary') {
@@ -167,10 +173,16 @@
         .map((sec, i) => {
           const blockItem = blockOutline[i];
           const id = blockItem ? blockItem.id : `sec-${i}`;
-          const h3Ids = blockItem
-            ? outline.filter((o) => o.level === 3 && o.parentId === blockItem.id).map((o) => o.id)
-            : [];
-          return renderSection(sec, id, h3Ids);
+          // Every ### / #### between this block's heading and the next
+          // one belongs to it, however deep it's nested.
+          let subHeadings = [];
+          if (blockItem) {
+            const startIdx = outline.indexOf(blockItem);
+            const nextBlock = blockOutline[i + 1];
+            const endIdx = nextBlock ? outline.indexOf(nextBlock) : outline.length;
+            subHeadings = outline.slice(startIdx + 1, endIdx).filter((o) => o.level >= 3);
+          }
+          return renderSection(sec, id, subHeadings);
         })
         .join('');
       const stars = starString(meta.rating);

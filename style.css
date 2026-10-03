@@ -51,7 +51,9 @@
   --line-soft: #ece6d6;
   --purple: #6b4e8e;
   --blue: #3d5a99;
+  --teal: #3f8a82;
   --shadow: 0 10px 30px -18px rgba(34, 31, 26, 0.35);
+  --nav-height: 4.5rem; /* fallback; app.js overwrites this with the real measured height */
   color-scheme: light;
 }
 
@@ -69,6 +71,7 @@
   --line-soft: #2a2619;
   --purple: #b093d1;
   --blue: #7fa0d9;
+  --teal: #6fc2b8;
   --shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
@@ -88,6 +91,7 @@
     --line-soft: #2a2619;
     --purple: #b093d1;
     --blue: #7fa0d9;
+    --teal: #6fc2b8;
     color-scheme: dark;
   }
 }
@@ -125,7 +129,13 @@ h3 {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--blue);
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: calc(var(--nav-height) + 1rem);
+}
+h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--teal);
+  scroll-margin-top: calc(var(--nav-height) + 1rem);
 }
 
 .wrap {
@@ -523,10 +533,27 @@ h3 {
   background: var(--blue);
   flex: 0 0 auto;
 }
+.toc li.toc-lvl4 { font-size: 0.78rem; }
+.toc li.toc-lvl4 > a {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--teal);
+  font-weight: 400;
+}
+.toc li.toc-lvl4 > a::before {
+  content: "";
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex: 0 0 auto;
+}
+
 .toc a { text-decoration: none; border-bottom: 1px solid transparent; }
 .toc a:hover { border-bottom-color: currentColor; }
 
-.block { margin-bottom: 2.2rem; scroll-margin-top: 5.5rem; }
+.block { margin-bottom: 2.2rem; scroll-margin-top: calc(var(--nav-height) + 1rem); }
 .block h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.9rem; }
 .block .prose p { color: var(--ink-soft); margin: 0 0 1rem; text-align: justify; text-justify:inter-word;}
 

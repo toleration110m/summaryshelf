@@ -26,13 +26,14 @@ function parseFrontmatter(raw) {
   return { meta, body: body.trim() };
 }
 
-// Splits the markdown body into ## sections: [{ heading, content }, ...]
+// Splits the markdown body into # / ## sections: [{ level, heading, content }, ...]
+// (### stays nested inside whichever # / ## section it falls under — see book.html).
 function splitSections(body) {
-  const parts = body.split(/\n(?=##\s+)/).map((s) => s.trim()).filter(Boolean);
+  const parts = body.split(/\n(?=#{1,2}\s+)/).map((s) => s.trim()).filter(Boolean);
   return parts.map((part) => {
-    const m = part.match(/^##\s+(.+)\n?([\s\S]*)$/);
-    if (!m) return { heading: '', content: part };
-    return { heading: m[1].trim(), content: m[2].trim() };
+    const m = part.match(/^(#{1,2})\s+(.+)\n?([\s\S]*)$/);
+    if (!m) return { level: 2, heading: '', content: part };
+    return { level: m[1].length, heading: m[2].trim(), content: m[3].trim() };
   });
 }
 
@@ -126,4 +127,23 @@ function initTheme() {
   });
 }
 
+/* ---------------- Sticky-nav height → CSS var (for scroll-margin-top) ---------------- */
+
+function setNavHeightVar() {
+  const nav = document.querySelector('.site-nav');
+  if (!nav) return;
+  document.documentElement.style.setProperty('--nav-height', nav.offsetHeight + 'px');
+}
+
+function initNavHeightVar() {
+  setNavHeightVar();
+  window.addEventListener('resize', setNavHeightVar);
+  // Re-measure once web fonts finish loading/swapping, in case that
+  // changes the nav's height (e.g. a different font's line height).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(setNavHeightVar);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', initTheme);
+document.addEventListener('DOMContentLoaded', initNavHeightVar);
