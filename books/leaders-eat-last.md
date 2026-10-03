@@ -2,7 +2,7 @@
 title: رهبران آخر غذا می خورند
 author: سایمون سینِک
 category: مدیریت
-year_read: 2014
+year_publish: 2014
 date_read: 1405/02/01
 read_minutes: 12
 rating: 5

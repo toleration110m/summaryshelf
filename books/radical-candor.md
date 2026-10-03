@@ -2,7 +2,7 @@
 title: صراحت تمام عیار
 author: کیم اسکات
 category: مدیریت
-year_read: 2017
+year_publish: 2017
 date_read: 1405/08/01
 read_minutes: 25
 rating: 5

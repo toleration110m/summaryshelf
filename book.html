@@ -189,9 +189,9 @@
 
       const metaItems = [
         meta.category ? `<span class="pill-tag">${meta.category}</span>` : '',
-        meta.year_read ? `<span class="item">${ICONS.calendar} ${meta.year_read}</span>` : '',
-        meta.date_read ? `<span class="item">${ICONS.calendar} خواندم: ${meta.date_read}</span>` : '',
-        meta.read_minutes ? `<span class="item">${ICONS.clock} ${meta.read_minutes} دقیقه مطالعه</span>` : '',
+        meta.year_publish ? `<span class="item">${ICONS.calendar} سال انتشار: ${toPersianDigits(meta.year_publish)}</span>` : '',
+        meta.date_read ? `<span class="item">${ICONS.calendar} خواندم: ${toPersianDigits(meta.date_read)}</span>` : '',
+        meta.read_minutes ? `<span class="item">${ICONS.clock} ${toPersianDigits(meta.read_minutes)} دقیقه مطالعه</span>` : '',
       ]
         .filter(Boolean)
         .join('');
@@ -205,7 +205,7 @@
             <h1 class="book-title">${meta.title || slug}</h1>
             <p class="book-byline">${meta.author || ''}</p>
             <div class="meta-row">${metaItems}</div>
-            ${stars ? `<div class="rating">${stars} <span class="num">${meta.rating}/۵</span></div>` : ''}
+            ${stars ? `<div class="rating">${stars} <span class="num">${toPersianDigits(meta.rating)}/۵</span></div>` : ''}
             ${meta.quote ? `<div class="quote-box">«${meta.quote}»</div>` : ''}
             ${toc}
             ${sections}

@@ -73,7 +73,10 @@
         ? `background-image:url('${b.meta.cover}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
       const sub = [b.meta.author].filter(Boolean).join(' ');
-      const meta = [b.meta.read_minutes ? `${b.meta.read_minutes} دقیقه` : null, b.meta.year_read]
+      const meta = [
+        b.meta.read_minutes ? `${toPersianDigits(b.meta.read_minutes)} دقیقه` : null,
+        b.meta.year_publish ? toPersianDigits(b.meta.year_publish) : null,
+      ]
         .filter(Boolean)
         .join(' · ');
       return `

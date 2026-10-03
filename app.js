@@ -92,6 +92,11 @@ const ICONS = {
   arrowUp: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
 };
 
+const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+function toPersianDigits(input) {
+  return String(input).replace(/[0-9]/g, (d) => PERSIAN_DIGITS[d]);
+}
+
 function starString(rating) {
   const n = parseInt(rating, 10);
   if (!n || n < 1) return '';
