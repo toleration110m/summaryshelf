@@ -1,42 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=optional');
 
-/* IranYekan is a licensed commercial font, not available on any public CDN.
-   Drop the webfont files you own into /fonts (see README) and these rules
-   will pick them up automatically. Until then, the site falls back to
-   Vazirmatn (free) further down the font stack, so nothing breaks. */
-@font-face {
-  font-family: 'IranYekan';
-  src: url('fonts/IranYekan-Regular.woff2') format('woff2'),
-       url('fonts/IranYekan-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: optional;
-}
-@font-face {
-  font-family: 'IranYekan';
-  src: url('fonts/IranYekan-Medium.woff2') format('woff2'),
-       url('fonts/IranYekan-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: optional;
-}
-@font-face {
-  font-family: 'IranYekan';
-  src: url('fonts/IranYekan-Bold.woff2') format('woff2'),
-       url('fonts/IranYekan-Bold.woff') format('woff');
-  font-weight: 700;
-  font-style: normal;
-  font-display: optional;
-}
-@font-face {
-  font-family: 'IranYekan';
-  src: url('fonts/IranYekan-ExtraBold.woff2') format('woff2'),
-       url('fonts/IranYekan-ExtraBold.woff') format('woff');
-  font-weight: 800;
-  font-style: normal;
-  font-display: optional;
-}
-
 :root {
   --paper: #f7f4ed;
   --paper-raised: #ffffff;
@@ -104,7 +67,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'IranYekan', 'Vazirmatn', 'Tahoma', sans-serif;
+  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
   line-height: 1.75;
   direction: rtl;
   transition: background 0.25s ease, color 0.25s ease;
