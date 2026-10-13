@@ -1,6 +1,10 @@
 // app.js — helpers shared by index.html and book.html.
 // No build step: relies on marked.js (loaded via CDN in the HTML pages).
 
+// Production address of the site. Used for canonical / Open Graph URLs.
+// Change this one line if the domain ever changes.
+const SITE_URL = 'https://shiyasi.ir';
+
 /* ---------------- Frontmatter + Markdown ---------------- */
 
 function parseFrontmatter(raw) {
@@ -174,3 +178,37 @@ function initBackToTop() {
 document.addEventListener('DOMContentLoaded', initTheme);
 document.addEventListener('DOMContentLoaded', initNavHeightVar);
 document.addEventListener('DOMContentLoaded', initBackToTop);
+
+/* ---------------- SEO helpers (per-page head tags) ---------------- */
+
+// Creates the tag if missing, then sets its attributes.
+function upsertHead(tag, matchAttr, matchVal, attrs) {
+  let el = document.head.querySelector(`${tag}[${matchAttr}="${matchVal}"]`);
+  if (!el) {
+    el = document.createElement(tag);
+    el.setAttribute(matchAttr, matchVal);
+    document.head.appendChild(el);
+  }
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+}
+
+// Strips basic markdown and trims to a search-result-friendly length.
+function plainSnippet(md, max = 155) {
+  const text = String(md || '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_`~|-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= max) return text;
+  return text.slice(0, max).replace(/\s+\S*$/, '') + '…';
+}
+
+function setPageSeo({ title, description, url }) {
+  document.title = title;
+  upsertHead('link', 'rel', 'canonical', { href: url });
+  upsertHead('meta', 'name', 'description', { content: description });
+  upsertHead('meta', 'property', 'og:title', { content: title });
+  upsertHead('meta', 'property', 'og:description', { content: description });
+  upsertHead('meta', 'property', 'og:url', { content: url });
+}

@@ -159,7 +159,6 @@
       }
       const [book, manifest] = await Promise.all([fetchBook(slug), fetchManifest()]);
       const { meta, body } = book;
-      document.title = meta.title || 'خلاصه کتاب';
 
       const cover = coverStyle(slug);
       const hasImage = !!meta.cover;
@@ -167,6 +166,20 @@
         ? `background-image:url('${meta.cover}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
       const rawSections = splitSections(body);
+
+      // Unique title / description / canonical per book, so search engines
+      // don't treat every book.html?b=... page as a duplicate of the others.
+      const summarySec = rawSections.find((s) => s.heading === 'خلاصه') || rawSections[0];
+      const description =
+        plainSnippet(summarySec && summarySec.content) ||
+        meta.quote ||
+        'خلاصه، نکات کلیدی و برداشت شخصی از این کتاب، بخشی از قفسه کتاب من.';
+      setPageSeo({
+        title: `${meta.title || slug}${meta.author ? ' | ' + meta.author : ''} | قفسه کتاب من`,
+        description,
+        url: `${SITE_URL}/book.html?b=${encodeURIComponent(slug)}`,
+      });
+
       const outline = buildOutline(body);
       const tree = buildTocTree(outline);
       const toc = tocHTML(tree);
