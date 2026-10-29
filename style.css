@@ -519,6 +519,20 @@ h4 {
 .block { margin-bottom: 2.2rem; scroll-margin-top: calc(var(--nav-height) + 1rem); }
 .block h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.9rem; }
 .block .prose p { color: var(--ink-soft); margin: 0 0 1rem; text-align: justify; text-justify:inter-word;}
+/* Images inside book summaries */
+.block img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
+.md-figure { margin: 1.4rem 0; }
+.md-figure img {
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.md-figure figcaption {
+  margin-top: 0.6rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
 
 ol.key-ideas { list-style: none; margin: 0; padding: 0; counter-reset: idea; }
 ol.key-ideas li {

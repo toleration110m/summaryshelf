@@ -104,9 +104,23 @@
       return null;
     }
 
+    // Images written in Markdown as ![alt](images/x.jpg "caption") become a
+    // <figure>; the optional "caption" (title) is shown under the picture.
+    function enhanceImages(html) {
+      // Only a paragraph that holds nothing but one image becomes a figure;
+      // an image in the middle of a sentence is left as a normal inline <img>.
+      return html.replace(/<p>\s*<img\s+([^>]*?)\/?>\s*<\/p>/g, (m, attrs) => {
+        const title = (attrs.match(/\btitle="([^"]*)"/) || [])[1];
+        const rest = attrs.replace(/\s*\btitle="[^"]*"/, '');
+        return `<figure class="md-figure"><img ${rest} decoding="async">${
+          title ? `<figcaption>${title}</figcaption>` : ''
+        }</figure>`;
+      });
+    }
+
     function renderSection(sec, id, subHeadings) {
       const kind = SECTION_MAP[sec.heading] || 'generic';
-      let html = marked.parse(sec.content);
+      let html = enhanceImages(marked.parse(sec.content));
       if (subHeadings && subHeadings.length) {
         let i = 0;
         // ### and #### become <h3>/<h4> via marked, in the same document
@@ -241,6 +255,18 @@
         ${nextSlug ? `<a href="book.html?b=${nextSlug}">کتاب بعدی ${ICONS.arrowLeft}</a>` : '<span></span>'}
       `;
       document.querySelector('.wrap').appendChild(footer);
+
+      // Pictures above a target section change its position once they load.
+      // If the page was opened/jumped with a #hash, re-align after they do.
+      const pending = [...contentEl.querySelectorAll('img')].filter((im) => !im.complete);
+      if (pending.length && location.hash) {
+        Promise.all(
+          pending.map((im) => new Promise((r) => { im.onload = im.onerror = r; }))
+        ).then(() => {
+          const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+          if (target) target.scrollIntoView();
+        });
+      }
     }
 
     render().catch((err) => {
