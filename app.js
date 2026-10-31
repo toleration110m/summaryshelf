@@ -8,6 +8,9 @@ const SITE_URL = 'https://shiyasi.ir';
 /* ---------------- Frontmatter + Markdown ---------------- */
 
 function parseFrontmatter(raw) {
+  // Tolerate Windows (CRLF) line endings and a leading BOM, both of which
+  // are common when files are saved on Windows.
+  raw = String(raw).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
   if (!match) return { meta: {}, body: raw };
 
@@ -39,6 +42,14 @@ function splitSections(body) {
     if (!m) return { level: 2, heading: '', content: part };
     return { level: m[1].length, heading: m[2].trim(), content: m[3].trim() };
   });
+}
+
+// Makes a `cover:` value safe to use inside CSS url('...'): fixes Windows
+// backslashes and escapes spaces / non-ASCII characters / quotes.
+function coverUrl(path) {
+  let p = String(path || '').trim().replace(/\\/g, '/');
+  try { p = decodeURI(p); } catch (e) { /* keep as-is */ }
+  return encodeURI(p).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
 }
 
 async function fetchBook(slug) {

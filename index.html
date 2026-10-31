@@ -76,7 +76,7 @@
       const cover = coverStyle(b.slug);
       const hasImage = !!b.meta.cover;
       const coverStyleAttr = hasImage
-        ? `background-image:url('${b.meta.cover}'); background-size:cover; background-position:center;`
+        ? `background-image:url('${coverUrl(b.meta.cover)}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
       const sub = [b.meta.author].filter(Boolean).join(' ');
       const meta = [

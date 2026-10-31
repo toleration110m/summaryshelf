@@ -177,7 +177,7 @@
       const cover = coverStyle(slug);
       const hasImage = !!meta.cover;
       const coverStyleAttr = hasImage
-        ? `background-image:url('${meta.cover}'); background-size:cover; background-position:center;`
+        ? `background-image:url('${coverUrl(meta.cover)}'); background-size:cover; background-position:center;`
         : `background:${cover.bg}; color:${cover.text};`;
       const rawSections = splitSections(body);
 
