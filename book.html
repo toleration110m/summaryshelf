@@ -222,7 +222,7 @@
         meta.category ? `<span class="pill-tag">${meta.category}</span>` : '',
         meta.year_publish ? `<span class="item">${ICONS.calendar} سال انتشار: ${toPersianDigits(meta.year_publish)}</span>` : '',
         meta.date_read ? `<span class="item">${ICONS.calendar} خواندم: ${toPersianDigits(meta.date_read)}</span>` : '',
-        meta.read_minutes ? `<span class="item">${ICONS.clock} ${toPersianDigits(meta.read_minutes)} دقیقه مطالعه</span>` : '',
+        meta.read_minutes ? `<span class="item">${ICONS.clock} ${toPersianDigits(meta.read_minutes)} زمان مطالعه</span>` : '',
       ]
         .filter(Boolean)
         .join('');
