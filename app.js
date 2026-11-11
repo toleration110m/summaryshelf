@@ -146,6 +146,15 @@ function toPersianDigits(input) {
   return String(input).replace(/[0-9]/g, (d) => PERSIAN_DIGITS[d]);
 }
 
+// Reading time: a plain number means minutes ("12" -> "۱۲ دقیقه");
+// anything else is shown exactly as written ("1 ساعت و 20 دقیقه").
+function formatReadTime(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  const text = toPersianDigits(raw);
+  return /^[0-9۰-۹٠-٩]+$/.test(raw) ? `${text} دقیقه` : text;
+}
+
 function starString(rating) {
   const n = parseInt(rating, 10);
   if (!n || n < 1) return '';

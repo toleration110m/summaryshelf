@@ -80,7 +80,7 @@
         : `background:${cover.bg}; color:${cover.text};`;
       const sub = [b.meta.author].filter(Boolean).join(' ');
       const meta = [
-        b.meta.read_minutes ? `${toPersianDigits(b.meta.read_minutes)} دقیقه` : null,
+        formatReadTime(b.meta.read_minutes) || null,
         b.meta.year_publish ? toPersianDigits(b.meta.year_publish) : null,
       ]
         .filter(Boolean)

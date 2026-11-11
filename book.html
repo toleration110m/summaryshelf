@@ -226,7 +226,7 @@
         meta.category ? `<span class="pill-tag">${meta.category}</span>` : '',
         meta.year_publish ? `<span class="item">${ICONS.calendar} سال انتشار: ${toPersianDigits(meta.year_publish)}</span>` : '',
         meta.date_updated ? `<span class="item">${ICONS.calendar} آخرین بروزرسانی: ${toPersianDigits(meta.date_updated)}</span>` : '',
-        meta.read_minutes ? `<span class="item">${ICONS.clock} زمان مطالعه: ${toPersianDigits(meta.read_minutes)}</span>` : '',
+        meta.read_minutes ? `<span class="item">${ICONS.clock} زمان مطالعه: ${formatReadTime(meta.read_minutes)}</span>` : '',
       ]
         .filter(Boolean)
         .join('');
