@@ -70,7 +70,41 @@ async function fetchManifest() {
 
 async function fetchAllBooks() {
   const slugs = await fetchManifest();
-  return Promise.all(slugs.map(fetchBook));
+  const results = await Promise.allSettled(slugs.map(fetchBook));
+  const books = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') books.push(r.value);
+    else console.warn(`Could not load books/${slugs[i]}.md`, r.reason);
+  });
+  // If *nothing* loaded, something is wrong (e.g. wrong server folder): surface it.
+  if (slugs.length && !books.length) throw results[0].reason;
+  return books;
+}
+
+/* ---------------- Sorting by last update ---------------- */
+
+// Turns "1404/03/01", "1404-3-1" or "۱۴۰۴/۰۳/۰۱" into a comparable number
+// (yyyymmdd). Missing / unreadable dates become 0, so they sort last.
+function dateSortKey(value) {
+  const ascii = String(value || '')
+    .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  const full = ascii.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (full) return +full[1] * 10000 + +full[2] * 100 + +full[3];
+  const year = ascii.match(/(\d{4})/);
+  return year ? +year[1] * 10000 : 0;
+}
+
+// Newest `date_updated` first; ties keep the order of books.json.
+function sortByUpdated(books) {
+  return books
+    .map((b, i) => ({ b, i, k: dateSortKey(b.meta.date_updated) }))
+    .sort((x, y) => y.k - x.k || x.i - y.i)
+    .map((x) => x.b);
+}
+
+async function fetchSortedBooks() {
+  return sortByUpdated(await fetchAllBooks());
 }
 
 /* ---------------- Cover generation ---------------- */

@@ -3,7 +3,7 @@ title: پروپاگاندا
 author: ادوارد برنیز
 category: روانشناسی
 year_publish: 1928
-date_read: در حال تکمیل
+date_updated: 1405/07/21
 read_minutes: 25
 rating: 3.7
 tags: [افکار عمومی, روانشناسی]

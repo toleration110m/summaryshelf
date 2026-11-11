@@ -171,7 +171,11 @@
         contentEl.innerHTML = '<p class="empty-state">کتابی مشخص نشده است.</p>';
         return;
       }
-      const [book, manifest] = await Promise.all([fetchBook(slug), fetchManifest()]);
+      // Same order as the home page (latest update first), so the
+      // previous / next links match what the visitor saw in the list.
+      const sortedBooks = await fetchSortedBooks();
+      const order = sortedBooks.map((b) => b.slug);
+      const book = sortedBooks.find((b) => b.slug === slug) || (await fetchBook(slug));
       const { meta, body } = book;
 
       const cover = coverStyle(slug);
@@ -221,8 +225,8 @@
       const metaItems = [
         meta.category ? `<span class="pill-tag">${meta.category}</span>` : '',
         meta.year_publish ? `<span class="item">${ICONS.calendar} سال انتشار: ${toPersianDigits(meta.year_publish)}</span>` : '',
-        meta.date_read ? `<span class="item">${ICONS.calendar} خواندم: ${toPersianDigits(meta.date_read)}</span>` : '',
-        meta.read_minutes ? `<span class="item">${ICONS.clock} ${toPersianDigits(meta.read_minutes)} زمان مطالعه</span>` : '',
+        meta.date_updated ? `<span class="item">${ICONS.calendar} آخرین بروزرسانی: ${toPersianDigits(meta.date_updated)}</span>` : '',
+        meta.read_minutes ? `<span class="item">${ICONS.clock} زمان مطالعه: ${toPersianDigits(meta.read_minutes)}</span>` : '',
       ]
         .filter(Boolean)
         .join('');
@@ -244,10 +248,10 @@
         </div>
       `;
 
-      // Prev / next navigation based on manifest order.
-      const idx = manifest.indexOf(slug);
-      const prevSlug = idx > 0 ? manifest[idx - 1] : null;
-      const nextSlug = idx >= 0 && idx < manifest.length - 1 ? manifest[idx + 1] : null;
+      // Prev / next navigation, following the sorted list order.
+      const idx = order.indexOf(slug);
+      const prevSlug = idx > 0 ? order[idx - 1] : null;
+      const nextSlug = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
       const footer = document.createElement('div');
       footer.className = 'detail-footer';
       footer.innerHTML = `
