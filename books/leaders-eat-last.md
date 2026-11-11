@@ -4,7 +4,7 @@ author: سایمون سینِک
 category: مدیریت
 year_publish: 2014
 date_updated: 1405/08/17
-read_minutes: 12
+read_minutes: 36 دقیقه
 rating: 5
 tags: [مدیریت, اخلاق]
 quote: رهبری یعنی مسئولیت‌پذیری در قبال انسان‌ها، فداکاری برای آنها، و ساختن محیطی امن برای رشد و همکاری
