@@ -171,11 +171,8 @@
         contentEl.innerHTML = '<p class="empty-state">کتابی مشخص نشده است.</p>';
         return;
       }
-      // Same order as the home page (latest update first), so the
-      // previous / next links match what the visitor saw in the list.
-      const sortedBooks = await fetchSortedBooks();
-      const order = sortedBooks.map((b) => b.slug);
-      const book = sortedBooks.find((b) => b.slug === slug) || (await fetchBook(slug));
+      // Only this book is needed to show the page, so fetch just that one.
+      const book = await fetchBook(slug);
       const { meta, body } = book;
 
       const cover = coverStyle(slug);
@@ -248,17 +245,25 @@
         </div>
       `;
 
-      // Prev / next navigation, following the sorted list order.
-      const idx = order.indexOf(slug);
-      const prevSlug = idx > 0 ? order[idx - 1] : null;
-      const nextSlug = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
-      const footer = document.createElement('div');
-      footer.className = 'detail-footer';
-      footer.innerHTML = `
-        ${prevSlug ? `<a href="book.html?b=${prevSlug}">${ICONS.arrowRight} کتاب قبلی</a>` : '<span></span>'}
-        ${nextSlug ? `<a href="book.html?b=${nextSlug}">کتاب بعدی ${ICONS.arrowLeft}</a>` : '<span></span>'}
-      `;
-      document.querySelector('.wrap').appendChild(footer);
+      // Prev / next links follow the same order as the home page (latest
+      // update first). They need every book's date, so they load in the
+      // background *after* the page is already on screen.
+      fetchSortedBooks()
+        .then((sortedBooks) => {
+          const order = sortedBooks.map((b) => b.slug);
+          const idx = order.indexOf(slug);
+          const prevSlug = idx > 0 ? order[idx - 1] : null;
+          const nextSlug = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
+          if (!prevSlug && !nextSlug) return;
+          const footer = document.createElement('div');
+          footer.className = 'detail-footer';
+          footer.innerHTML = `
+            ${prevSlug ? `<a href="book.html?b=${prevSlug}">${ICONS.arrowRight} کتاب قبلی</a>` : '<span></span>'}
+            ${nextSlug ? `<a href="book.html?b=${nextSlug}">کتاب بعدی ${ICONS.arrowLeft}</a>` : '<span></span>'}
+          `;
+          contentEl.parentElement.appendChild(footer);
+        })
+        .catch((err) => console.warn('Prev/next links unavailable:', err));
 
       // Pictures above a target section change its position once they load.
       // If the page was opened/jumped with a #hash, re-align after they do.
