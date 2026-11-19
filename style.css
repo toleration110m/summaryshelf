@@ -12,6 +12,7 @@
   --gold-soft: #f4e9d3;
   --line: #e2dbc9;
   --line-soft: #ece6d6;
+  --table-line: #c9c0a8;
   --purple: #6b4e8e;
   --blue: #3d5a99;
   --teal: #3f8a82;
@@ -32,6 +33,7 @@
   --gold-soft: #33291a;
   --line: #34301f;
   --line-soft: #2a2619;
+  --table-line: #4d4730;
   --purple: #b093d1;
   --blue: #7fa0d9;
   --teal: #6fc2b8;
@@ -52,6 +54,7 @@
     --gold-soft: #33291a;
     --line: #34301f;
     --line-soft: #2a2619;
+  --table-line: #4d4730;
     --purple: #b093d1;
     --blue: #7fa0d9;
     --teal: #6fc2b8;
@@ -533,6 +536,32 @@ h4 {
   font-size: 0.82rem;
   color: var(--muted);
 }
+
+/* Tables inside book summaries (raw HTML tables written in the Markdown) */
+.block table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-size: 0.92rem;
+  border: 1px solid var(--table-line);
+}
+.block th,
+.block td {
+  border: 1px solid var(--table-line);
+  padding: 0.6rem 0.8rem;
+  vertical-align: top;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+.block th {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 700;
+}
+/* Paragraphs inside cells: no extra bottom gap, keep the cell's own alignment */
+.block .prose :is(td, th) p,
+.block :is(td, th) p { margin: 0; text-align: inherit; }
+.block :is(td, th) p + p { margin-top: 0.5rem; }
 
 ol.key-ideas { list-style: none; margin: 0; padding: 0; counter-reset: idea; }
 ol.key-ideas li {
