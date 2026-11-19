@@ -75,12 +75,21 @@
       { bg: 'linear-gradient(155deg,#e9d7a8,#cfa94f)', text: '#3a2b0c' },
     ];
 
-    // The most recently updated books (allBooks is sorted newest first),
-    // stacked so the newest one sits on top.
+    // Four random books from the library (all of them if there are fewer than four).
+    // A different selection is shown on every page load.
+    function pickRandom(list, n) {
+      const a = list.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a.slice(0, n);
+    }
+
     function renderStack() {
-      const latest = allBooks.slice(0, SPINE_COLORS.length).reverse();
+      const picked = pickRandom(allBooks, SPINE_COLORS.length);
       document.getElementById('book-stack').replaceChildren(
-        ...latest.map((b, i) => {
+        ...picked.map((b, i) => {
           const spine = document.createElement('div');
           spine.className = 'spine';
           spine.style.background = SPINE_COLORS[i].bg;
