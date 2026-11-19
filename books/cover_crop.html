@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>برش ۶۰۰×۸۰۰ و تبدیل به WebP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#f3f5f2;--panel:#fff;--ink:#1c2420;--mute:#66726b;--line:#d5dbd6;--acc:#1f6f5c;--accink:#fff;--frame:#ffd23f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121715;--panel:#1b2220;--ink:#e8eee9;--mute:#94a39a;--line:#2f3a36;--acc:#4fc3a5;--accink:#0b1511}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;font-weight:800;margin:0 0 4px}
+p.sub{margin:0 0 18px;color:var(--mute)}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;background:var(--panel);cursor:pointer}
+.drop.over{border-color:var(--acc)}
+.drop b{color:var(--acc)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer}
+button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,.drop:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.q{display:flex;align-items:center;gap:8px;margin-inline-start:auto}
+.grid{display:grid;grid-template-columns:130px 1fr;gap:16px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+#list{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto}
+@media(max-width:700px){#list{flex-direction:row;max-height:none;overflow-x:auto}}
+.th{flex:0 0 auto;width:110px;border:2px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);padding:0;position:relative}
+.th.sel{border-color:var(--acc)}
+.th img{display:block;width:100%;height:80px;object-fit:cover}
+.th span{display:block;font-size:.7rem;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.canvasWrap{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+#edit{position:relative;touch-action:none;user-select:none;direction:ltr;line-height:0}
+#edit img{display:block;max-width:100%}
+#box{position:absolute;border:2px solid var(--frame);box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move}
+#box::before,#box::after{content:"";position:absolute;background:rgba(255,210,63,.45)}
+#box::before{left:33.3%;right:33.3%;top:0;bottom:0;border-inline:1px solid rgba(255,210,63,.45);background:none}
+#box::after{top:33.3%;bottom:33.3%;left:0;right:0;border-block:1px solid rgba(255,210,63,.45);background:none}
+#hnd{position:absolute;right:-9px;bottom:-9px;width:20px;height:20px;background:var(--frame);border-radius:4px;cursor:nwse-resize;z-index:2}
+.pv{text-align:center}
+.pv canvas{width:150px;height:200px;border:1px solid var(--line);border-radius:6px;background:#888}
+.pv small{display:block;color:var(--mute)}
+.empty{color:var(--mute);text-align:center;padding:40px 0}
+.info{color:var(--mute);font-size:.85rem;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>برش ۶۰۰×۸۰۰ و تبدیل به WebP</h1>
+<p class="sub">عکس‌ها را اضافه کنید. برش به‌صورت خودکار از وسط عکس انجام می‌شود و اگر بخواهید، کادر را خودتان جابه‌جا یا تغییر اندازه بدهید. همه‌چیز روی دستگاه خودتان انجام می‌شود.</p>
+
+<div class="drop" id="drop" tabindex="0" role="button">
+  عکس‌ها را اینجا رها کنید یا <b>برای انتخاب فایل کلیک کنید</b>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+</div>
+
+<div class="bar">
+  <button id="autoAll" disabled>برش خودکار همه (وسط)</button>
+  <button id="reset" disabled>بازنشانی این عکس</button>
+  <button id="dlOne" disabled>دانلود این عکس</button>
+  <button id="dlAll" class="pri" disabled>دانلود همه (ZIP)</button>
+  <label class="q">کیفیت <input type="range" id="qual" min="40" max="100" value="85"> <span id="qv">85</span></label>
+</div>
+
+<div class="grid">
+  <div id="list"></div>
+  <div class="stage">
+    <div id="empty" class="empty">هنوز عکسی انتخاب نشده است.</div>
+    <div id="work" hidden>
+      <div class="canvasWrap">
+        <div id="edit"><img id="img" alt=""><div id="box"><div id="hnd"></div></div></div>
+        <div class="pv"><canvas id="pv" width="150" height="200"></canvas><small>پیش‌نمایش ۶۰۰×۸۰۰</small></div>
+      </div>
+      <div class="info" id="info"></div>
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+const W=600,H=800,R=W/H;
+const $=id=>document.getElementById(id);
+const items=[];let cur=-1,scale=1;
+const img=$('img'),box=$('box'),hnd=$('hnd'),pv=$('pv');
+
+function autoCrop(it){
+  const iw=it.img.naturalWidth,ih=it.img.naturalHeight;
+  let w=iw,h=w/R;
+  if(h>ih){h=ih;w=h*R}
+  it.crop={x:(iw-w)/2,y:(ih-h)/2,w};
+}
+function addFiles(files){
+  const list=[...files].filter(f=>f.type.startsWith('image/'));
+  let pending=list.length;
+  list.forEach(f=>{
+    const url=URL.createObjectURL(f),im=new Image();
+    im.onload=()=>{const it={file:f,img:im,url};autoCrop(it);items.push(it);
+      if(--pending===0){render();select(cur<0?0:cur)}};
+    im.onerror=()=>{if(--pending===0){render();if(items.length)select(Math.max(cur,0))}};
+    im.src=url;
+  });
+}
+function render(){
+  const l=$('list');l.innerHTML='';
+  items.forEach((it,i)=>{
+    const b=document.createElement('button');b.className='th'+(i===cur?' sel':'');
+    b.innerHTML='<img alt=""><span></span>';
+    b.querySelector('img').src=it.url;b.querySelector('span').textContent=it.file.name;
+    b.onclick=()=>select(i);l.appendChild(b);
+  });
+  const has=items.length>0;
+  ['autoAll','reset','dlOne','dlAll'].forEach(k=>$(k).disabled=!has);
+  $('empty').hidden=has;$('work').hidden=!has;
+}
+function select(i){
+  cur=i;const it=items[i];
+  document.querySelectorAll('.th').forEach((e,k)=>e.classList.toggle('sel',k===i));
+  img.onload=()=>{layout()};
+  img.src=it.url;
+  if(img.complete)layout();
+}
+function layout(){
+  const it=items[cur];if(!it)return;
+  scale=img.clientWidth/it.img.naturalWidth;
+  place();
+}
+function place(){
+  const it=items[cur],c=it.crop;
+  box.style.left=c.x*scale+'px';box.style.top=c.y*scale+'px';
+  box.style.width=c.w*scale+'px';box.style.height=c.w/R*scale+'px';
+  preview();
+  $('info').textContent='ناحیه برش: '+Math.round(c.w)+'×'+Math.round(c.w/R)+' پیکسل از '+it.img.naturalWidth+'×'+it.img.naturalHeight+(c.w<W?' (کوچک‌تر از ۶۰۰ است و بزرگ‌نمایی می‌شود)':'');
+}
+function draw(it,cv){
+  const g=cv.getContext('2d');g.imageSmoothingQuality='high';
+  g.clearRect(0,0,cv.width,cv.height);
+  const c=it.crop;g.drawImage(it.img,c.x,c.y,c.w,c.w/R,0,0,cv.width,cv.height);
+}
+function preview(){draw(items[cur],pv)}
+
+/* drag and resize */
+let mode=null,sx,sy,sc;
+box.addEventListener('pointerdown',e=>{
+  mode=e.target===hnd?'size':'move';
+  sx=e.clientX;sy=e.clientY;sc={...items[cur].crop};
+  box.setPointerCapture(e.pointerId);e.preventDefault();
+});
+box.addEventListener('pointermove',e=>{
+  if(!mode)return;
+  const it=items[cur],iw=it.img.naturalWidth,ih=it.img.naturalHeight;
+  const dx=(e.clientX-sx)/scale,dy=(e.clientY-sy)/scale,c=it.crop;
+  if(mode==='move'){
+    c.x=Math.min(Math.max(0,sc.x+dx),iw-c.w);
+    c.y=Math.min(Math.max(0,sc.y+dy),ih-c.w/R);
+  }else{
+    const maxW=Math.min(iw-sc.x,(ih-sc.y)*R);
+    c.w=Math.min(Math.max(40,sc.w+Math.max(dx,dy*R)),maxW);
+  }
+  place();
+});
+const end=()=>{mode=null};
+box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
+window.addEventListener('resize',layout);
+
+/* export */
+const quality=()=>$('qual').value/100;
+function toBlob(it){
+  return new Promise(res=>{
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;draw(it,cv);
+    cv.toBlob(b=>res(b),'image/webp',quality());
+  });
+}
+const outName=it=>it.file.name.replace(/\.[^.]+$/,'')+'-600x800.webp';
+function save(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+$('dlOne').onclick=async()=>{const it=items[cur];save(await toBlob(it),outName(it))};
+$('dlAll').onclick=async()=>{
+  const b=$('dlAll');b.disabled=true;const t=b.textContent;b.textContent='در حال ساخت...';
+  const zip=new JSZip(),used={};
+  for(const it of items){
+    let n=outName(it);if(used[n]){n=n.replace('.webp','-'+used[n]+'.webp')}used[outName(it)]=(used[outName(it)]||0)+1;
+    zip.file(n,await toBlob(it));
+  }
+  save(await zip.generateAsync({type:'blob'}),'webp-600x800.zip');
+  b.textContent=t;b.disabled=false;
+};
+$('autoAll').onclick=()=>{items.forEach(autoCrop);place()};
+$('reset').onclick=()=>{autoCrop(items[cur]);place()};
+$('qual').oninput=e=>{$('qv').textContent=e.target.value};
+
+/* input */
+const drop=$('drop'),file=$('file');
+drop.onclick=()=>file.click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click()}};
+file.onchange=()=>{addFiles(file.files);file.value=''};
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+</script>
+</body>
+</html>
