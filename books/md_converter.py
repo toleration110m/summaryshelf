@@ -12,6 +12,12 @@ import shutil
 import tempfile
 from urllib.parse import quote, unquote
 
+try:
+    from PIL import Image, ImageOps
+    PIL_AVAILABLE = True
+except ImportError:  # Pillow نصب نیست
+    PIL_AVAILABLE = False
+
 
 APP_NAME = "MdConverter"
 
@@ -20,6 +26,10 @@ LINK_PREFIX = "books"
 
 # سرعت مطالعه (کلمه در دقیقه) برای محاسبه‌ی read_minutes
 READING_WPM = 200
+
+# تبدیل تصاویر به WebP (کیفیت 1 تا 100؛ ۸۵ تعادل خوبی بین حجم و کیفیت است)
+WEBP_QUALITY = 85
+WEBP_CONVERTIBLE = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".gif"}
 
 
 # ==================================================
@@ -63,14 +73,20 @@ def save_config(data):
         pass
 
 
-def load_last_save_dir():
-    return load_config().get("last_save_dir", "")
+def load_last_open_dir():
+    return load_config().get("last_open_dir", "")
 
 
-def save_last_save_dir(path):
+def save_last_open_dir(path):
     config = load_config()
-    config["last_save_dir"] = str(path)
+    config["last_open_dir"] = str(path)
     save_config(config)
+
+
+def make_output_name(input_path):
+    """نام فایل ورودی، حروف کوچک، و فاصله‌ها به dash: 'My Book.docx' -> 'my-book.md'"""
+    stem = re.sub(r'\s+', '-', input_path.stem.strip()).lower()
+    return stem + ".md"
 
 
 # ==================================================
@@ -288,13 +304,34 @@ def format_image(alt, url, title):
     return f'![{alt}]({url})'
 
 
+def save_as_webp(src, dst):
+    with Image.open(src) as img:
+        if getattr(img, "is_animated", False):
+            raise ValueError("animated image")  # متحرک‌ها دست‌نخورده می‌مانند
+        img = ImageOps.exif_transpose(img)
+        has_alpha = (
+            img.mode in ("RGBA", "LA")
+            or (img.mode == "P" and "transparency" in img.info)
+        )
+        img = img.convert("RGBA" if has_alpha else "RGB")
+        img.save(dst, "WEBP", quality=WEBP_QUALITY, method=6)
+
+
+def format_size(n):
+    for unit in ("B", "KB", "MB"):
+        if n < 1024 or unit == "MB":
+            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+
+
 def organize_images(text, extract_dir, media_root, doc_name):
     """
     تصاویر استخراج‌شده توسط pandoc را به ترتیب ظهور در متن به
     media_root/doc_name/01.ext, 02.ext, ... منتقل می‌کند و همه‌ی
     تصاویر را با فرمت ![alt](مسیر "title") می‌نویسد.
     متن Description در Alt Text ورد، هم alt و هم title می‌شود.
-    خروجی: (متن جدید، تعداد تصاویر)
+    تصاویر قابل‌تبدیل (png/jpg/bmp/tiff/gif ثابت) به WebP تبدیل می‌شوند.
+    خروجی: (متن جدید، تعداد تصاویر، آمار حجم)
     """
     extract_dir = Path(extract_dir)
 
@@ -311,8 +348,9 @@ def organize_images(text, extract_dir, media_root, doc_name):
         if p and p not in ordered:
             ordered.append(p)
 
+    stats = {"orig": 0, "new": 0, "webp": 0, "pillow": PIL_AVAILABLE}
     if not ordered:
-        return text, 0
+        return text, 0, stats
 
     width = max(2, len(str(len(ordered))))
     target_dir = Path(media_root) / doc_name
@@ -324,9 +362,25 @@ def organize_images(text, extract_dir, media_root, doc_name):
 
     new_names = {}
     for i, p in enumerate(ordered, start=1):
-        name = f"{i:0{width}d}{p.suffix.lower()}"
-        shutil.copy2(p, target_dir / name)
+        stem = f"{i:0{width}d}"
+        name = None
+
+        if PIL_AVAILABLE and p.suffix.lower() in WEBP_CONVERTIBLE:
+            candidate = target_dir / f"{stem}.webp"
+            try:
+                save_as_webp(p, candidate)
+                name = candidate.name
+                stats["webp"] += 1
+            except Exception:
+                candidate.unlink(missing_ok=True)
+
+        if name is None:  # تبدیل نشد: فایل اصلی کپی می‌شود
+            name = f"{stem}{p.suffix.lower()}"
+            shutil.copy2(p, target_dir / name)
+
         new_names[p] = name
+        stats["orig"] += p.stat().st_size
+        stats["new"] += (target_dir / name).stat().st_size
 
     base = f"{quote(Path(media_root).name)}/{quote(doc_name)}"
     if LINK_PREFIX:
@@ -341,7 +395,7 @@ def organize_images(text, extract_dir, media_root, doc_name):
         caption = alt or title
         return format_image(caption, f"{base}/{new_names[p]}", caption)
 
-    return IMG_PATTERN.sub(replace, text), len(ordered)
+    return IMG_PATTERN.sub(replace, text), len(ordered), stats
 
 
 # ==================================================
@@ -396,12 +450,17 @@ def convert_word_to_markdown():
     root.withdraw()
 
     script_dir = get_script_dir()
-    last_save_dir = load_last_save_dir()
+    last_open_dir = load_last_open_dir()
 
-    # انتخاب فایل ورودی — همیشه در مسیر اسکریپت
+    # پنجره‌ی انتخاب فایل: آخرین پوشه‌ای که ازش فایل انتخاب شده
+    if last_open_dir and Path(last_open_dir).is_dir():
+        initial_open_dir = last_open_dir
+    else:
+        initial_open_dir = str(script_dir)
+
     input_file = filedialog.askopenfilename(
         title="Select Word File",
-        initialdir=str(script_dir),
+        initialdir=initial_open_dir,
         filetypes=[
             ("Word Documents", "*.docx"),
             ("All Files", "*.*")
@@ -413,32 +472,11 @@ def convert_word_to_markdown():
 
     input_path = Path(input_file)
 
-    # انتخاب فایل خروجی — آخرین مسیر ذخیره
-    default_name = input_path.stem + ".md"
+    # ذخیره‌ی پوشه برای دفعه‌ی بعد
+    save_last_open_dir(input_path.parent)
 
-    if last_save_dir and Path(last_save_dir).exists():
-        initial_save_dir = last_save_dir
-    else:
-        initial_save_dir = str(input_path.parent)
-
-    output_file = filedialog.asksaveasfilename(
-        title="Save Markdown File",
-        initialdir=initial_save_dir,
-        defaultextension=".md",
-        initialfile=default_name,
-        filetypes=[
-            ("Markdown Files", "*.md"),
-            ("All Files", "*.*")
-        ]
-    )
-    if not output_file:
-        root.destroy()
-        return
-
-    output_path = Path(output_file)
-
-    # ذخیره مسیر برای دفعه بعد
-    save_last_save_dir(output_path.parent)
+    # خروجی: کنار فایل برنامه، بدون سوال؛ اگر وجود داشته باشد جایگزین می‌شود
+    output_path = script_dir / make_output_name(input_path)
 
     media_root = output_path.parent / "media"
 
@@ -470,7 +508,7 @@ def convert_word_to_markdown():
 
             markdown_text = clean_list_spacing(markdown_text)
 
-            markdown_text, image_count = organize_images(
+            markdown_text, image_count, img_stats = organize_images(
                 markdown_text, tmp_path, media_root, output_path.stem
             )
 
@@ -498,6 +536,14 @@ def convert_word_to_markdown():
 
         info = f"Conversion completed successfully!\n\nOutput:\n{output_path}"
         info += f"\n\nImages: {image_count}"
+        if image_count:
+            info += (
+                f" ({img_stats['webp']} converted to WebP, "
+                f"{format_size(img_stats['orig'])} -> "
+                f"{format_size(img_stats['new'])})"
+            )
+            if not img_stats["pillow"]:
+                info += "\nPillow is not installed, so images were not converted. Run: pip install Pillow"
         info += f"\nRead time: {meta['read_minutes']}"
         info += f"\nDate updated: {meta['date_updated']}"
         if meta_found:
