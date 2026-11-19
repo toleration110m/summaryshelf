@@ -45,12 +45,7 @@
           <span id="search-icon"></span>
         </div>
       </div>
-      <div class="book-stack" aria-hidden="true">
-        <div class="spine" style="background: linear-gradient(155deg,#332f28,#1c1a15); color:#e8e2d0;">عادت‌های اتمی</div>
-        <div class="spine" style="background: linear-gradient(155deg,#4a5877,#2c3550); color:#eceaf0;">کار عمیق</div>
-        <div class="spine" style="background: linear-gradient(155deg,#c98a63,#a1583a); color:#fff8ef;">انسان خردمند</div>
-        <div class="spine" style="background: linear-gradient(155deg,#e9d7a8,#cfa94f); color:#3a2b0c;">شازده کوچولو</div>
-      </div>
+      <div id="book-stack" class="book-stack" aria-hidden="true"></div>
     </section>
 
     <div id="pills" class="pills"></div>
@@ -71,6 +66,32 @@
 
     let allBooks = [];
     let activeCategory = 'همه';
+
+    // Spine colours, listed from the bottom of the stack to the top.
+    const SPINE_COLORS = [
+      { bg: 'linear-gradient(155deg,#332f28,#1c1a15)', text: '#e8e2d0' },
+      { bg: 'linear-gradient(155deg,#4a5877,#2c3550)', text: '#eceaf0' },
+      { bg: 'linear-gradient(155deg,#c98a63,#a1583a)', text: '#fff8ef' },
+      { bg: 'linear-gradient(155deg,#e9d7a8,#cfa94f)', text: '#3a2b0c' },
+    ];
+
+    // The most recently updated books (allBooks is sorted newest first),
+    // stacked so the newest one sits on top.
+    function renderStack() {
+      const latest = allBooks.slice(0, SPINE_COLORS.length).reverse();
+      document.getElementById('book-stack').replaceChildren(
+        ...latest.map((b, i) => {
+          const spine = document.createElement('div');
+          spine.className = 'spine';
+          spine.style.background = SPINE_COLORS[i].bg;
+          spine.style.color = SPINE_COLORS[i].text;
+          const title = document.createElement('span');
+          title.textContent = b.meta.title || b.slug;
+          spine.appendChild(title);
+          return spine;
+        })
+      );
+    }
 
     function cardHTML(b) {
       const cover = coverStyle(b.slug);
@@ -140,6 +161,7 @@
     fetchSortedBooks()
       .then((books) => {
         allBooks = books;
+        renderStack();
         renderPills();
         renderGrid();
       })

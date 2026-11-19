@@ -247,6 +247,13 @@ h4 {
 .book-stack .spine:nth-child(2) { bottom: 3.4rem; z-index: 3; right: 3%; left: 9%; }
 .book-stack .spine:nth-child(3) { bottom: 6.8rem; z-index: 2; right: 9%; left: 3%; }
 .book-stack .spine:nth-child(4) { bottom: 10.2rem; z-index: 1; right: 0%; left: 12%; }
+/* Long titles are cut with an ellipsis instead of overflowing the spine */
+.book-stack .spine span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
 /* ---------- Category pills ---------- */
 
