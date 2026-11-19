@@ -8,7 +8,7 @@ read_minutes: 36 دقیقه
 rating: 5
 tags: [مدیریت, اخلاق]
 quote: رهبری یعنی مسئولیت‌پذیری در قبال انسان‌ها، فداکاری برای آنها، و ساختن محیطی امن برای رشد و همکاری
-cover: covers/SimonSinek.webp
+cover: books/media/leaders-eat-last/cover.webp
 ---
 
 # فصل 1: ارتش

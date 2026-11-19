@@ -8,7 +8,7 @@ read_minutes: 18 دقیقه
 rating: 3.7
 tags: [افکار عمومی, روانشناسی]
 quote: دستکاری آگاهانه و هوشمندانه‌ی عادت‌ها و افکار توده‌ها، عنصر مهمی در جامعه‌ی دموکراتیک است
-cover: covers/EdwardBernays.webp
+cover: books/media/propaganda/cover.webp
 ---
 
 # معرفی
