@@ -94,9 +94,19 @@
           spine.className = 'spine';
           spine.style.background = SPINE_COLORS[i].bg;
           spine.style.color = SPINE_COLORS[i].text;
+          const content = document.createElement('div');
+          content.className = 'spine-content';
           const title = document.createElement('span');
           title.textContent = b.meta.title || b.slug;
-          spine.appendChild(title);
+          content.appendChild(title);
+          if (b.meta.cover) {
+            const cover = document.createElement('img');
+            cover.className = 'spine-cover';
+            cover.src = coverUrl(b.meta.cover);
+            cover.alt = '';
+            content.appendChild(cover);
+          }
+          spine.appendChild(content);
           return spine;
         })
       );

@@ -243,16 +243,33 @@ h4 {
   font-weight: 600;
   box-shadow: var(--shadow);
 }
+.book-stack .spine-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  width: 100%;
+}
 .book-stack .spine:nth-child(1) { bottom: 0;    z-index: 4; }
 .book-stack .spine:nth-child(2) { bottom: 3.4rem; z-index: 3; right: 3%; left: 9%; }
 .book-stack .spine:nth-child(3) { bottom: 6.8rem; z-index: 2; right: 9%; left: 3%; }
 .book-stack .spine:nth-child(4) { bottom: 10.2rem; z-index: 1; right: 0%; left: 12%; }
 /* Long titles are cut with an ellipsis instead of overflowing the spine */
 .book-stack .spine span {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.book-stack .spine-cover {
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transform: rotate(-90deg);
 }
 
 /* ---------- Category pills ---------- */
