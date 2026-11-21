@@ -175,11 +175,7 @@
       const book = await fetchBook(slug);
       const { meta, body } = book;
 
-      const cover = coverStyle(slug);
-      const hasImage = !!meta.cover;
-      const coverStyleAttr = hasImage
-        ? `background-image:url('${coverUrl(meta.cover)}'); background-size:cover; background-position:center;`
-        : `background:${cover.bg}; color:${cover.text};`;
+      const coverStyleAttr = `background-image:url('${coverUrlForSlug(slug)}'); background-size:cover; background-position:center;`;
       const rawSections = splitSections(body);
 
       // Unique title / description / canonical per book, so search engines
@@ -231,7 +227,6 @@
       contentEl.innerHTML = `
         <div class="detail-grid">
           <div class="detail-cover" style="${coverStyleAttr}">
-            ${hasImage ? '' : `<span class="cover-title">${meta.title || slug}</span>`}
           </div>
           <div>
             <h1 class="book-title">${meta.title || slug}</h1>

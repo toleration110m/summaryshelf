@@ -99,13 +99,11 @@
           const title = document.createElement('span');
           title.textContent = b.meta.title || b.slug;
           content.appendChild(title);
-          if (b.meta.cover) {
-            const cover = document.createElement('img');
-            cover.className = 'spine-cover';
-            cover.src = coverUrl(b.meta.cover);
-            cover.alt = '';
-            content.appendChild(cover);
-          }
+          const cover = document.createElement('img');
+          cover.className = 'spine-cover';
+          cover.src = coverUrlForSlug(b.slug);
+          cover.alt = '';
+          content.appendChild(cover);
           spine.appendChild(content);
           return spine;
         })
@@ -114,10 +112,7 @@
 
     function cardHTML(b) {
       const cover = coverStyle(b.slug);
-      const hasImage = !!b.meta.cover;
-      const coverStyleAttr = hasImage
-        ? `background-image:url('${coverUrl(b.meta.cover)}'); background-size:cover; background-position:center;`
-        : `background:${cover.bg}; color:${cover.text};`;
+      const coverStyleAttr = `background-image:url('${coverUrlForSlug(b.slug)}'); background-size:cover; background-position:center;`;
       const sub = [b.meta.author].filter(Boolean).join(' ');
       const meta = [
         formatReadTime(b.meta.read_minutes) || null,
@@ -129,7 +124,6 @@
         <a class="book-card" href="book.html?b=${encodeURIComponent(b.slug)}">
           <div class="cover" style="${coverStyleAttr}">
             ${b.meta.category ? `<span class="cover-tag">${b.meta.category}</span>` : ''}
-            ${hasImage ? '' : `<span class="cover-title">${b.meta.title || b.slug}</span>`}
           </div>
           <div class="card-body">
             <p class="c-title">${b.meta.title || b.slug}</p>

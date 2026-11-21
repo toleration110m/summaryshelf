@@ -44,12 +44,18 @@ function splitSections(body) {
   });
 }
 
-// Makes a `cover:` value safe to use inside CSS url('...'): fixes Windows
-// backslashes and escapes spaces / non-ASCII characters / quotes.
+// Converts a file path to a safe CSS URL, including Windows separators,
+// spaces, non-ASCII characters and quotes.
 function coverUrl(path) {
   let p = String(path || '').trim().replace(/\\/g, '/');
   try { p = decodeURI(p); } catch (e) { /* keep as-is */ }
   return encodeURI(p).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
+}
+
+// The cover for each book follows one predictable convention:
+// books/media/<slug>/cover.webp
+function coverUrlForSlug(slug) {
+  return coverUrl(`books/media/${slug}/cover.webp`);
 }
 
 async function fetchBook(slug) {

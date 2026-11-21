@@ -52,6 +52,7 @@ def main() -> int:
         meta = parse_frontmatter(path.read_text(encoding="utf-8"))
         if not meta.get("title"):
             print(f"هشدار: {path.name} فیلد title ندارد.", file=sys.stderr)
+        meta.pop("cover", None)
         books.append({"slug": path.stem, **meta})
 
     new_text = json.dumps(books, ensure_ascii=False, indent=2) + "\n"
