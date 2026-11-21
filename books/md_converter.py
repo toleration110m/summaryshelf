@@ -246,8 +246,11 @@ def build_front_matter(meta):
     field_order = [
         "title", "author", "category", "year_publish",
         "date_updated", "read_minutes", "rating",
-        "tags", "quote", "cover"
+        "tags", "quote"
     ]
+
+    meta = dict(meta)
+    meta.pop("cover", None)
 
     lines = ["---"]
 
@@ -355,10 +358,24 @@ def organize_images(text, extract_dir, media_root, doc_name):
     width = max(2, len(str(len(ordered))))
     target_dir = Path(media_root) / doc_name
 
-    # پاک‌سازی نتیجه‌ی تبدیل قبلی همین فایل تا تصاویر قدیمی نمانند
+    # پاک‌سازی نتیجه‌ی تبدیل قبلی همین فایل تا تصاویر قدیمی نمانند.
+    # cover.webp کاور اختصاصی صفحه است و نباید حذف شود؛ فقط تصاویر
+    # استخراج‌شده/شماره‌گذاری‌شده‌ی قدیمی حذف می‌شوند.
+    cover_src = target_dir / "cover.webp"
+    cover_backup = None
+    if cover_src.is_file():
+        fd, cover_backup_name = tempfile.mkstemp(suffix=".webp")
+        os.close(fd)
+        cover_backup = Path(cover_backup_name)
+        shutil.copy2(cover_src, cover_backup)
+
     if target_dir.exists():
         shutil.rmtree(target_dir)
     target_dir.mkdir(parents=True)
+
+    if cover_backup:
+        shutil.copy2(cover_backup, target_dir / "cover.webp")
+        cover_backup.unlink(missing_ok=True)
 
     new_names = {}
     for i, p in enumerate(ordered, start=1):
