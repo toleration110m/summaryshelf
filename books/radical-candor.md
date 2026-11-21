@@ -8,7 +8,6 @@ read_minutes: 2 ساعت
 rating: 5
 tags: [مدیریت, منابع انسانی, تعامل موثر]
 quote: چگونه رئیس قاطعی باشیم و انسانیتمان را از دست ندهیم
-cover: books/media/radical-candor/cover.webp
 ---
 
 # معرفی
