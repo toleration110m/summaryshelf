@@ -416,14 +416,14 @@ def organize_images(text, extract_dir, media_root, doc_name):
 
 
 # ==================================================
-# اجرای build_index.py (یک پوشه عقب‌تر از پوشه‌ی خروجی md)
+# اجرای build_index.py (در همان پوشه‌ی فایل‌های Markdown)
 # ==================================================
 def run_build_index(md_dir):
     """
     خروجی: (status, detail) که status یکی از "ok" / "missing" / "error" است.
     خطای این مرحله هیچ‌وقت تبدیل فایل را خراب نمی‌کند.
     """
-    script = Path(md_dir).resolve().parent / "build_index.py"
+    script = Path(md_dir).resolve() / "build_index.py"
     if not script.is_file():
         return "missing", str(script)
 

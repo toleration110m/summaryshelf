@@ -4,7 +4,7 @@ build_index.py — ساخت books.json از فرانت‌متر فایل‌ها�
 
 هر بار کتابی را اضافه یا ویرایش کردی (مثلاً عوض شدن date_updated)، قبل از commit:
 
-    python3 build_index.py
+    python3 books/build_index.py
 
 صفحه‌ی اصلی فقط همین فایل کوچک را می‌خواند، نه همه‌ی فایل‌های Markdown را.
 فایل‌هایی که اسمشان با «_» شروع شود (مثلاً _draft.md) نادیده گرفته می‌شوند.
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BOOKS_DIR = ROOT / "books"
+BOOKS_DIR = ROOT
 OUT = ROOT / "books.json"
 
 FM = re.compile(r"^---\s*\n([\s\S]*?)\n---\s*\n?", re.S)

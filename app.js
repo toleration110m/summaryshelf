@@ -69,7 +69,7 @@ async function fetchBook(slug) {
 let manifestCache = null;
 async function fetchManifest() {
   if (manifestCache) return manifestCache;
-  const res = await fetch('books.json');
+  const res = await fetch('books/books.json');
   if (!res.ok) throw new Error('books.json پیدا نشد');
   manifestCache = await res.json();
   return manifestCache;
