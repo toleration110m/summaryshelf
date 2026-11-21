@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-build_index.py — ساخت books.json از فرانت‌متر فایل‌های books/*.md
+build_index.py — ساخت books.json از پوشه‌های books/<slug>/<slug>.md
 
 هر بار کتابی را اضافه یا ویرایش کردی (مثلاً عوض شدن date_updated)، قبل از commit:
 
@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BOOKS_DIR = ROOT
 OUT = ROOT / "books.json"
 
 FM = re.compile(r"^---\s*\n([\s\S]*?)\n---\s*\n?", re.S)
@@ -41,13 +40,17 @@ def parse_frontmatter(raw: str) -> dict:
 
 
 def main() -> int:
-    if not BOOKS_DIR.is_dir():
-        print("پوشه‌ی books/ پیدا نشد.", file=sys.stderr)
+    if not ROOT.is_dir():
+        print("پوشه‌ی books پیدا نشد.", file=sys.stderr)
         return 1
 
     books = []
-    for path in sorted(BOOKS_DIR.glob("*.md")):
-        if path.name.startswith("_"):
+    dirs = sorted((path for path in ROOT.iterdir() if path.is_dir()), key=lambda path: path.name)
+    for book_dir in dirs:
+        if book_dir.name.startswith("_"):
+            continue
+        path = book_dir / f"{book_dir.name}.md"
+        if not path.is_file():
             continue
         meta = parse_frontmatter(path.read_text(encoding="utf-8"))
         if not meta.get("title"):

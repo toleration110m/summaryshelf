@@ -356,26 +356,17 @@ def organize_images(text, extract_dir, media_root, doc_name):
         return text, 0, stats
 
     width = max(2, len(str(len(ordered))))
-    target_dir = Path(media_root) / doc_name
+    target_dir = Path(media_root)
 
     # پاک‌سازی نتیجه‌ی تبدیل قبلی همین فایل تا تصاویر قدیمی نمانند.
     # cover.webp کاور اختصاصی صفحه است و نباید حذف شود؛ فقط تصاویر
     # استخراج‌شده/شماره‌گذاری‌شده‌ی قدیمی حذف می‌شوند.
-    cover_src = target_dir / "cover.webp"
-    cover_backup = None
-    if cover_src.is_file():
-        fd, cover_backup_name = tempfile.mkstemp(suffix=".webp")
-        os.close(fd)
-        cover_backup = Path(cover_backup_name)
-        shutil.copy2(cover_src, cover_backup)
-
-    if target_dir.exists():
-        shutil.rmtree(target_dir)
-    target_dir.mkdir(parents=True)
-
-    if cover_backup:
-        shutil.copy2(cover_backup, target_dir / "cover.webp")
-        cover_backup.unlink(missing_ok=True)
+    # پوشه‌ی کتاب شامل Markdown و کاور است؛ فقط تصاویر شماره‌گذاری‌شده‌ی
+    # قدیمی پاک می‌شوند تا cover.webp و فایل MD حذف نشوند.
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for old_file in target_dir.iterdir():
+        if old_file.is_file() and re.match(r'^\d+\.[^.]+$', old_file.name):
+            old_file.unlink()
 
     new_names = {}
     for i, p in enumerate(ordered, start=1):
@@ -399,7 +390,7 @@ def organize_images(text, extract_dir, media_root, doc_name):
         stats["orig"] += p.stat().st_size
         stats["new"] += (target_dir / name).stat().st_size
 
-    base = f"{quote(Path(media_root).name)}/{quote(doc_name)}"
+    base = f"{LINK_PREFIX.strip('/')}/{quote(doc_name)}"
     if LINK_PREFIX:
         base = f"{LINK_PREFIX.strip('/')}/{base}"
 
@@ -416,14 +407,14 @@ def organize_images(text, extract_dir, media_root, doc_name):
 
 
 # ==================================================
-# اجرای build_index.py (در همان پوشه‌ی فایل‌های Markdown)
+# اجرای build_index.py (یک سطح بالاتر از پوشه هر کتاب)
 # ==================================================
 def run_build_index(md_dir):
     """
     خروجی: (status, detail) که status یکی از "ok" / "missing" / "error" است.
     خطای این مرحله هیچ‌وقت تبدیل فایل را خراب نمی‌کند.
     """
-    script = Path(md_dir).resolve() / "build_index.py"
+    script = Path(md_dir).resolve().parent / "build_index.py"
     if not script.is_file():
         return "missing", str(script)
 
@@ -493,9 +484,14 @@ def convert_word_to_markdown():
     save_last_open_dir(input_path.parent)
 
     # خروجی: کنار فایل برنامه، بدون سوال؛ اگر وجود داشته باشد جایگزین می‌شود
-    output_path = script_dir / make_output_name(input_path)
+    # خروجی Markdown و رسانه‌ها در پوشه اختصاصی اسلاگ قرار می‌گیرند.
+    # هر کتاب یک پوشه‌ی اختصاصی دارد: books/<slug>/<slug>.md + فایل‌های رسانه.
+    slug = make_output_name(input_path).removesuffix(".md")
+    book_dir = script_dir / slug
+    book_dir.mkdir(parents=True, exist_ok=True)
+    output_path = book_dir / f"{slug}.md"
 
-    media_root = output_path.parent / "media"
+    media_root = book_dir
 
     try:
         with tempfile.TemporaryDirectory() as tmp:

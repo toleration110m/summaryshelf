@@ -53,13 +53,13 @@ function coverUrl(path) {
 }
 
 // The cover for each book follows one predictable convention:
-// books/media/<slug>/cover.webp
+// books/<slug>/cover.webp
 function coverUrlForSlug(slug) {
-  return coverUrl(`books/media/${slug}/cover.webp`);
+  return coverUrl(`books/${slug}/cover.webp`);
 }
 
 async function fetchBook(slug) {
-  const res = await fetch(`books/${slug}.md`);
+  const res = await fetch(`books/${slug}/${slug}.md`);
   if (!res.ok) throw new Error(`کتاب یافت نشد: ${slug}`);
   const raw = await res.text();
   const { meta, body } = parseFrontmatter(raw);
@@ -93,7 +93,7 @@ async function fetchAllBooks() {
   const books = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') books.push(r.value);
-    else console.warn(`Could not load books/${slugs[i]}.md`, r.reason);
+    else console.warn(`Could not load books/${slugs[i]}/${slugs[i]}.md`, r.reason);
   });
   // If *nothing* loaded, something is wrong (e.g. wrong server folder): surface it.
   if (slugs.length && !books.length) throw results[0].reason;
