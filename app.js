@@ -1,5 +1,5 @@
 // app.js — helpers shared by index.html and book.html.
-// No build step: relies on marked.js (loaded via CDN in the HTML pages).
+// No build step: relies on marked.js (served locally from lib/marked.min.js).
 
 // Production address of the site. Used for canonical / Open Graph URLs.
 // Change this one line if the domain ever changes.

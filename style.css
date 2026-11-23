@@ -1,4 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=optional');
+/* Vazirmatn (variable font, all weights 100-900) is served from /fonts - no external requests.
+   License: SIL OFL 1.1, see fonts/OFL.txt */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('fonts/Vazirmatn-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --paper: #f7f4ed;
@@ -582,6 +590,8 @@ h4 {
   color: var(--ink);
   font-weight: 700;
 }
+/* th is already bold; keep <strong> inside it at the same weight instead of going to 900 */
+.block th strong { font-weight: inherit; }
 /* Paragraphs inside cells: no extra bottom gap, keep the cell's own alignment */
 .block .prose :is(td, th) p,
 .block :is(td, th) p { margin: 0; text-align: inherit; }
