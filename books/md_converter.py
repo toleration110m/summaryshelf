@@ -20,8 +20,10 @@ except ImportError:  # Pillow نصب نیست
 
 
 APP_NAME = "MdConverter"
+APP_VERSION = "2026-11-24-e"  # برای اطمینان از اینکه نسخه‌ی درست اجرا می‌شود
 
-# پیشوند پوشه در آدرس تصاویر داخل فایل md (برای خالی کردن: "")
+# پیشوند آدرس تصاویر داخل فایل md: books/نام-کتاب/01.webp
+# ساختار روی دیسک: <پوشه‌ی برنامه>/نام-کتاب/{نام-کتاب.md, 01.webp, ...}
 LINK_PREFIX = "books"
 
 # سرعت مطالعه (کلمه در دقیقه) برای محاسبه‌ی read_minutes
@@ -246,11 +248,8 @@ def build_front_matter(meta):
     field_order = [
         "title", "author", "category", "year_publish",
         "date_updated", "read_minutes", "rating",
-        "tags", "quote"
+        "tags", "quote", "cover"
     ]
-
-    meta = dict(meta)
-    meta.pop("cover", None)
 
     lines = ["---"]
 
@@ -273,7 +272,7 @@ def build_front_matter(meta):
 
 
 # ==================================================
-# سازماندهی تصاویر: media/<نام فایل>/01.png, 02.png, ...
+# سازماندهی تصاویر: <پوشه‌ی خروجی>/<نام کتاب>/01.webp, 02.webp, ...
 # ==================================================
 IMG_PATTERN = re.compile(
     r'!\[(?P<md_alt>(?:[^\]\\]|\\.)*)\]'
@@ -282,6 +281,12 @@ IMG_PATTERN = re.compile(
     r'|(?P<html><img\b[^>]*>)',
     re.IGNORECASE | re.DOTALL
 )
+IMAGE_SUFFIXES = {
+    ".webp", ".png", ".jpg", ".jpeg", ".gif", ".bmp",
+    ".tif", ".tiff", ".emf", ".wmf", ".svg"
+}
+# فایل‌هایی که هنگام پاک‌سازی تصاویر قبلی هرگز حذف نمی‌شوند (cover.webp و ...)
+PROTECTED_STEMS = {"cover"}
 ATTR_PATTERN = re.compile(r'([\w:-]+)\s*=\s*"([^"]*)"')
 
 
@@ -327,10 +332,10 @@ def format_size(n):
         n /= 1024
 
 
-def organize_images(text, extract_dir, media_root, doc_name):
+def organize_images(text, extract_dir, output_dir, doc_name):
     """
     تصاویر استخراج‌شده توسط pandoc را به ترتیب ظهور در متن به
-    media_root/doc_name/01.ext, 02.ext, ... منتقل می‌کند و همه‌ی
+    output_dir/doc_name/01.ext, 02.ext, ... منتقل می‌کند و همه‌ی
     تصاویر را با فرمت ![alt](مسیر "title") می‌نویسد.
     متن Description در Alt Text ورد، هم alt و هم title می‌شود.
     تصاویر قابل‌تبدیل (png/jpg/bmp/tiff/gif ثابت) به WebP تبدیل می‌شوند.
@@ -356,17 +361,18 @@ def organize_images(text, extract_dir, media_root, doc_name):
         return text, 0, stats
 
     width = max(2, len(str(len(ordered))))
-    target_dir = Path(media_root)
+    target_dir = Path(output_dir) / doc_name
 
-    # پاک‌سازی نتیجه‌ی تبدیل قبلی همین فایل تا تصاویر قدیمی نمانند.
-    # cover.webp کاور اختصاصی صفحه است و نباید حذف شود؛ فقط تصاویر
-    # استخراج‌شده/شماره‌گذاری‌شده‌ی قدیمی حذف می‌شوند.
-    # پوشه‌ی کتاب شامل Markdown و کاور است؛ فقط تصاویر شماره‌گذاری‌شده‌ی
-    # قدیمی پاک می‌شوند تا cover.webp و فایل MD حذف نشوند.
+    # پاک‌سازی تصاویر تبدیل قبلی همین کتاب (فقط فایل‌های تصویری، نه کل پوشه)
+    if target_dir.is_dir():
+        for old_file in target_dir.iterdir():
+            if (
+                old_file.is_file()
+                and old_file.suffix.lower() in IMAGE_SUFFIXES
+                and old_file.stem.lower() not in PROTECTED_STEMS
+            ):
+                old_file.unlink()
     target_dir.mkdir(parents=True, exist_ok=True)
-    for old_file in target_dir.iterdir():
-        if old_file.is_file() and re.match(r'^\d+\.[^.]+$', old_file.name):
-            old_file.unlink()
 
     new_names = {}
     for i, p in enumerate(ordered, start=1):
@@ -390,9 +396,9 @@ def organize_images(text, extract_dir, media_root, doc_name):
         stats["orig"] += p.stat().st_size
         stats["new"] += (target_dir / name).stat().st_size
 
-    base = f"{LINK_PREFIX.strip('/')}/{quote(doc_name)}"
+    base = quote(doc_name)
     if LINK_PREFIX:
-        base = f"{LINK_PREFIX.strip('/')}/{base}"
+        base = f"{LINK_PREFIX.rstrip('/')}/{base}"
 
     def replace(m):
         alt, src, title = parse_image(m)
@@ -407,7 +413,7 @@ def organize_images(text, extract_dir, media_root, doc_name):
 
 
 # ==================================================
-# اجرای build_index.py (یک سطح بالاتر از پوشه هر کتاب)
+# اجرای build_index.py (یک پوشه عقب‌تر از پوشه‌ی خروجی md)
 # ==================================================
 def run_build_index(md_dir):
     """
@@ -484,14 +490,11 @@ def convert_word_to_markdown():
     save_last_open_dir(input_path.parent)
 
     # خروجی: کنار فایل برنامه، بدون سوال؛ اگر وجود داشته باشد جایگزین می‌شود
-    # خروجی Markdown و رسانه‌ها در پوشه اختصاصی اسلاگ قرار می‌گیرند.
-    # هر کتاب یک پوشه‌ی اختصاصی دارد: books/<slug>/<slug>.md + فایل‌های رسانه.
-    slug = make_output_name(input_path).removesuffix(".md")
-    book_dir = script_dir / slug
+    # هر کتاب یک پوشه‌ی مخصوص دارد: <پوشه‌ی برنامه>/<نام-کتاب>/<نام-کتاب>.md
+    book_name = Path(make_output_name(input_path)).stem
+    book_dir = script_dir / book_name
     book_dir.mkdir(parents=True, exist_ok=True)
-    output_path = book_dir / f"{slug}.md"
-
-    media_root = book_dir
+    output_path = book_dir / f"{book_name}.md"
 
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -522,7 +525,7 @@ def convert_word_to_markdown():
             markdown_text = clean_list_spacing(markdown_text)
 
             markdown_text, image_count, img_stats = organize_images(
-                markdown_text, tmp_path, media_root, output_path.stem
+                markdown_text, tmp_path, script_dir, book_name
             )
 
         # تخمین زمان مطالعه (اگر در META دستی نوشته شده باشد، همان می‌ماند)
@@ -545,7 +548,7 @@ def convert_word_to_markdown():
         output_path.write_text(final_text, encoding="utf-8")
 
         # اجرای build_index.py بعد از ذخیره‌ی فایل md
-        index_status, index_detail = run_build_index(output_path.parent)
+        index_status, index_detail = run_build_index(script_dir)
 
         info = f"Conversion completed successfully!\n\nOutput:\n{output_path}"
         info += f"\n\nImages: {image_count}"
@@ -563,6 +566,8 @@ def convert_word_to_markdown():
             info += f"\n\nMetadata fields found: {meta_count}"
         else:
             info += "\n\nWarning: No [META] block found!"
+
+        info += f"\n\n(v{APP_VERSION})"
 
         if index_status == "ok":
             info += "\n\nbuild_index.py: executed successfully"
