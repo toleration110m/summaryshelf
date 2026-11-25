@@ -498,14 +498,14 @@ def organize_images(text, extract_dir, output_dir, doc_name):
 
 
 # ==================================================
-# اجرای build_index.py (یک پوشه عقب‌تر از پوشه‌ی خروجی md)
+# اجرای build_index.py از همان پوشه‌ای که md_converter قرار دارد
 # ==================================================
-def run_build_index(md_dir):
+def run_build_index(books_dir):
     """
     خروجی: (status, detail) که status یکی از "ok" / "missing" / "error" است.
     خطای این مرحله هیچ‌وقت تبدیل فایل را خراب نمی‌کند.
     """
-    script = Path(md_dir).resolve().parent / "build_index.py"
+    script = Path(books_dir).resolve() / "build_index.py"
     if not script.is_file():
         return "missing", str(script)
 
