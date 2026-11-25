@@ -10,6 +10,7 @@ import html
 import datetime
 import shutil
 import tempfile
+import zipfile
 from urllib.parse import quote, unquote
 
 try:
@@ -20,7 +21,7 @@ except ImportError:  # Pillow نصب نیست
 
 
 APP_NAME = "MdConverter"
-APP_VERSION = "2026-11-24-e"  # برای اطمینان از اینکه نسخه‌ی درست اجرا می‌شود
+APP_VERSION = "2026-11-24-g"  # برای اطمینان از اینکه نسخه‌ی درست اجرا می‌شود
 
 # پیشوند آدرس تصاویر داخل فایل md: books/نام-کتاب/01.webp
 # ساختار روی دیسک: <پوشه‌ی برنامه>/نام-کتاب/{نام-کتاب.md, 01.webp, ...}
@@ -272,6 +273,90 @@ def build_front_matter(meta):
 
 
 # ==================================================
+# رفع افتادن شماره‌ی caption (فیلدهای ساده‌ی Word مثل SEQ)
+# ==================================================
+SIMPLE_FIELD_PATTERN = re.compile(
+    r'<w:fldSimple\b((?:[^>"]|"[^"]*")*?)(?:/>|>(.*?)</w:fldSimple>)',
+    re.DOTALL
+)
+
+
+def unwrap_simple_fields(xml):
+    """
+    pandoc محتوای <w:fldSimple> را دور می‌ریزد و شماره‌ی «شکل 1» فقط «شکل»
+    می‌شود. اینجا فیلد برداشته می‌شود و متن نتیجه‌اش می‌ماند. اگر نتیجه‌ی
+    یک فیلد SEQ خالی باشد، شماره‌ی ترتیبی جایگزین می‌شود.
+    """
+    counters = {}
+
+    def repl(m):
+        attrs, inner = m.group(1), m.group(2) or ""
+        has_text = re.search(r'<w:t\b[^>]*>[^<]+</w:t>', inner)
+        if not has_text:
+            seq = re.search(r'SEQ\s+([^\s"\\]+)', html.unescape(attrs))
+            if seq:
+                name = seq.group(1)
+                counters[name] = counters.get(name, 0) + 1
+                return f'<w:r><w:t>{counters[name]}</w:t></w:r>'
+        return inner
+
+    return SIMPLE_FIELD_PATTERN.sub(repl, xml)
+
+
+def preprocess_docx(src, dst):
+    """نسخه‌ای از docx با فیلدهای ساده‌ی باز‌شده برای pandoc می‌سازد."""
+    with zipfile.ZipFile(src) as zin, \
+            zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "word/document.xml":
+                data = unwrap_simple_fields(data.decode("utf-8")).encode("utf-8")
+            zout.writestr(item, data)
+
+
+# ==================================================
+# تصاویر دارای caption (Word) -> pandoc آن‌ها را <figure> می‌نویسد
+# ==================================================
+FIGURE_PATTERN = re.compile(r'<figure\b[^>]*>(.*?)</figure>', re.IGNORECASE | re.DOTALL)
+FIGCAPTION_PATTERN = re.compile(r'<figcaption\b[^>]*>(.*?)</figcaption>', re.IGNORECASE | re.DOTALL)
+IMG_TAG_PATTERN = re.compile(r'<img\b[^>]*>', re.IGNORECASE | re.DOTALL)
+
+
+def unwrap_figures(text):
+    """
+    <figure><img><figcaption>متن</figcaption></figure> را به
+    ![متن](مسیر) ساده تبدیل می‌کند. داخل بلوک HTML، Markdown رندر
+    نمی‌شود و تصویر نمایش داده نمی‌شد.
+    """
+    def repl(m):
+        inner = m.group(1)
+        cap_match = FIGCAPTION_PATTERN.search(inner)
+        caption = ""
+        if cap_match:
+            caption = html.unescape(re.sub(r'<[^>]+>', '', cap_match.group(1)))
+            caption = re.sub(r'\s+', ' ', caption).strip()
+
+        images = []
+        for tag in IMG_TAG_PATTERN.findall(inner):
+            attrs = {
+                k.lower(): html.unescape(v)
+                for k, v in ATTR_PATTERN.findall(tag)
+            }
+            src = attrs.get("src")
+            if not src:
+                continue
+            alt = re.sub(r'\s+', ' ', attrs.get("alt", "")).strip() or caption
+            alt = alt.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+            images.append(f"![{alt}](<{src}>)")
+
+        if not images:
+            return m.group(0)
+        return "\n\n".join(images)
+
+    return FIGURE_PATTERN.sub(repl, text)
+
+
+# ==================================================
 # سازماندهی تصاویر: <پوشه‌ی خروجی>/<نام کتاب>/01.webp, 02.webp, ...
 # ==================================================
 IMG_PATTERN = re.compile(
@@ -501,10 +586,17 @@ def convert_word_to_markdown():
             tmp_path = Path(tmp)
             temp_md = tmp_path / "out.md"
 
+            # فیلدهای ساده‌ی Word (شماره‌ی caption) را باز می‌کند؛ اگر نشد، فایل اصلی
+            pandoc_input = tmp_path / "input.docx"
+            try:
+                preprocess_docx(input_path, pandoc_input)
+            except Exception:
+                pandoc_input = input_path.resolve()
+
             # pandoc داخل پوشه‌ی موقت اجرا می‌شود تا لینک‌ها نسبی باشند
             command = [
                 "pandoc",
-                str(input_path.resolve()),
+                str(pandoc_input),
                 "-f", "docx",
                 "-t", "gfm",
                 "--wrap=none",
@@ -519,6 +611,7 @@ def convert_word_to_markdown():
 
             markdown_text = temp_md.read_text(encoding="utf-8")
             markdown_text = remove_direction_spans(markdown_text)
+            markdown_text = unwrap_figures(markdown_text)
 
             meta, markdown_text = extract_meta_block(markdown_text)
 
