@@ -119,9 +119,15 @@
       });
     }
 
+    function persianizeHeadingHtml(html) {
+      return html.replace(/<(h[1-4])([^>]*)>(.*?)<\/\1>/g,
+        (match, tag, attrs, text) => `<${tag}${attrs}>${toPersianDigits(text)}</${tag}>`
+      );
+    }
+
     function renderSection(sec, id, subHeadings) {
       const kind = SECTION_MAP[sec.heading] || 'generic';
-      let html = enhanceImages(marked.parse(sec.content));
+      let html = persianizeHeadingHtml(enhanceImages(marked.parse(sec.content)));
       if (subHeadings && subHeadings.length) {
         let i = 0;
         // ### and #### become <h3>/<h4> via marked, in the same document
@@ -132,16 +138,17 @@
         });
       }
       const Tag = sec.level === 1 ? 'h1' : 'h2';
+      const sectionHeading = toPersianDigits(sec.heading);
       if (kind === 'summary') {
-        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}><div class="prose">${html}</div></section>`;
+        return `<section class="block" id="${id}"><${Tag}>${sectionHeading}</${Tag}><div class="prose">${html}</div></section>`;
       }
       if (kind === 'key-ideas') {
-        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}>${tagFirstList(html, 'key-ideas')}</section>`;
+        return `<section class="block" id="${id}"><${Tag}>${sectionHeading}</${Tag}>${tagFirstList(html, 'key-ideas')}</section>`;
       }
       if (kind === 'takeaways') {
-        return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}>${tagFirstList(html, 'takeaways')}</section>`;
+        return `<section class="block" id="${id}"><${Tag}>${sectionHeading}</${Tag}>${tagFirstList(html, 'takeaways')}</section>`;
       }
-      return `<section class="block" id="${id}"><${Tag}>${sec.heading}</${Tag}><div class="prose">${html}</div></section>`;
+      return `<section class="block" id="${id}"><${Tag}>${sectionHeading}</${Tag}><div class="prose">${html}</div></section>`;
     }
 
     function countTocNodes(nodes) {
@@ -153,7 +160,7 @@
       const sub = node.children.length
         ? `<ul class="toc-sub">${node.children.map(renderTocNode).join('')}</ul>`
         : '';
-      return `<li class="${cls}"><a href="#${node.id}">${node.heading}</a>${sub}</li>`;
+      return `<li class="${cls}"><a href="#${node.id}">${toPersianDigits(node.heading)}</a>${sub}</li>`;
     }
 
     function tocHTML(tree) {
@@ -240,6 +247,13 @@
           </div>
         </div>
       `;
+
+      const textWalker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT);
+      const textNodes = [];
+      while (textWalker.nextNode()) textNodes.push(textWalker.currentNode);
+      textNodes.forEach((node) => {
+        node.textContent = toPersianDigits(node.textContent);
+      });
 
       // Prev / next links follow the same order as the home page (latest
       // update first). They need every book's date, so they load in the
