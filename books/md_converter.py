@@ -311,15 +311,106 @@ def unwrap_simple_fields(xml):
     return SIMPLE_FIELD_PATTERN.sub(repl, xml)
 
 
+# علامت موقت برای پاراگراف‌های استایل Quote که سطح ۲ (>>) می‌شوند (بعد از pandoc حذف می‌شود)
+LEVEL2_MARK = "ZZQUOTELEVEL2ZZ"
+PARAGRAPH_PATTERN = re.compile(r'<w:p\b(?:[^>"]|"[^"]*")*?>.*?</w:p>', re.DOTALL)
+FIRST_TEXT_PATTERN = re.compile(r'(<w:t(?:\s[^>/]*)?>)')
+
+
+def find_style_id(styles_xml, style_name):
+    """styleId مربوط به نام استایل (مثلاً Intense Quote -> IntenseQuote)."""
+    for m in re.finditer(
+        r'<w:style\b[^>]*?w:styleId="([^"]+)"[^>]*>.*?</w:style>',
+        styles_xml, re.DOTALL
+    ):
+        name = re.search(r'<w:name w:val="([^"]+)"', m.group(0))
+        if name and name.group(1).lower() == style_name.lower():
+            return m.group(1)
+    return None
+
+
+def mark_level2_quotes(document_xml, style_id):
+    """ابتدای متن هر پاراگراف استایل Quote یک علامت موقت می‌گذارد."""
+    style_tag = f'<w:pStyle w:val="{style_id}"/>'
+
+    def repl(m):
+        para = m.group(0)
+        if style_tag not in para:
+            return para
+        return FIRST_TEXT_PATTERN.sub(r'\1' + LEVEL2_MARK, para, count=1)
+
+    return PARAGRAPH_PATTERN.sub(repl, document_xml)
+
+
 def preprocess_docx(src, dst):
-    """نسخه‌ای از docx با فیلدهای ساده‌ی باز‌شده برای pandoc می‌سازد."""
+    """
+    نسخه‌ای از docx برای pandoc می‌سازد: فیلدهای ساده باز می‌شوند و
+    پاراگراف‌های استایل Quote علامت‌گذاری می‌شوند (pandoc فرقشان با Intense Quote
+    را نمی‌گذارد و هر دو را «>» می‌نویسد).
+    """
     with zipfile.ZipFile(src) as zin, \
             zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
+        style_id = None
+        if "word/styles.xml" in zin.namelist():
+            styles = zin.read("word/styles.xml").decode("utf-8")
+            style_id = find_style_id(styles, "Quote")
+
         for item in zin.infolist():
             data = zin.read(item.filename)
             if item.filename == "word/document.xml":
-                data = unwrap_simple_fields(data.decode("utf-8")).encode("utf-8")
+                xml = unwrap_simple_fields(data.decode("utf-8"))
+                if style_id:
+                    xml = mark_level2_quotes(xml, style_id)
+                data = xml.encode("utf-8")
             zout.writestr(item, data)
+
+
+def convert_quote_levels(text):
+    """
+    Intense Quote -> «> متن» (سطح ۱) و Quote -> «>> متن» (سطح ۲).
+    پاراگراف‌های پشت‌سرهم از یک نوع، یک نقل‌قول پیوسته می‌مانند.
+    """
+    if LEVEL2_MARK not in text:
+        return text
+
+    out = []
+    in_quote = False
+    connector_idx = None   # خط خالی «>» بین دو پاراگراف نقل‌قول
+    cur_level2 = False
+
+    for line in text.split("\n"):
+        is_plain_quote = line.startswith(">") and not re.match(r'>\s*>', line)
+
+        if is_plain_quote:
+            content = line[1:]
+            if content.startswith(" "):
+                content = content[1:]
+
+            if content.strip() == "":
+                out.append(">")
+                connector_idx = len(out) - 1 if in_quote else None
+                continue
+
+            if not in_quote or connector_idx is not None:
+                prev_level2 = cur_level2 if in_quote else False
+                cur_level2 = LEVEL2_MARK in content
+                if connector_idx is not None and prev_level2 and cur_level2:
+                    out[connector_idx] = ">>"
+                connector_idx = None
+
+            in_quote = True
+            content = content.replace(LEVEL2_MARK, "")
+            out.append((">> " if cur_level2 else "> ") + content)
+            continue
+
+        in_quote = False
+        connector_idx = None
+        if LEVEL2_MARK in line:  # پاراگراف علامت‌دار (Quote) که pandoc نقل‌قول نکرده
+            out.append(">> " + line.replace(LEVEL2_MARK, ""))
+        else:
+            out.append(line)
+
+    return "\n".join(out)
 
 
 # ==================================================
@@ -620,6 +711,7 @@ def convert_word_to_markdown():
             markdown_text = temp_md.read_text(encoding="utf-8")
             markdown_text = remove_direction_spans(markdown_text)
             markdown_text = strip_bidi_marks(markdown_text)
+            markdown_text = convert_quote_levels(markdown_text)
             markdown_text = unwrap_figures(markdown_text)
 
             meta, markdown_text = extract_meta_block(markdown_text)
