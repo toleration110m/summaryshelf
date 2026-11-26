@@ -112,6 +112,15 @@ def remove_direction_spans(text):
     return text
 
 
+# کاراکترهای نامرئی کنترل جهت (RLM, LRM, ALM, embedding/override/isolate)
+# نیم‌فاصله (U+200C) عمداً در این فهرست نیست.
+BIDI_MARKS_PATTERN = re.compile("[\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]")
+
+
+def strip_bidi_marks(text):
+    return BIDI_MARKS_PATTERN.sub("", text)
+
+
 def clean_list_spacing(text):
     lines = text.splitlines()
     result = []
@@ -610,6 +619,7 @@ def convert_word_to_markdown():
 
             markdown_text = temp_md.read_text(encoding="utf-8")
             markdown_text = remove_direction_spans(markdown_text)
+            markdown_text = strip_bidi_marks(markdown_text)
             markdown_text = unwrap_figures(markdown_text)
 
             meta, markdown_text = extract_meta_block(markdown_text)
