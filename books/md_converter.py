@@ -21,7 +21,6 @@ except ImportError:  # Pillow نصب نیست
 
 
 APP_NAME = "MdConverter"
-APP_VERSION = "2026-11-24-g"  # برای اطمینان از اینکه نسخه‌ی درست اجرا می‌شود
 
 # پیشوند آدرس تصاویر داخل فایل md: books/نام-کتاب/01.webp
 # ساختار روی دیسک: <پوشه‌ی برنامه>/نام-کتاب/{نام-کتاب.md, 01.webp, ...}
@@ -638,7 +637,10 @@ def convert_word_to_markdown():
 
         final_text = front_matter + markdown_text
 
-        output_path.write_text(final_text, encoding="utf-8")
+        # همیشه با LF ذخیره می‌شود (در ویندوز write_text پیش‌فرض CRLF می‌نویسد)
+        final_text = final_text.replace("\r\n", "\n").replace("\r", "\n")
+        with open(output_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(final_text)
 
         # اجرای build_index.py بعد از ذخیره‌ی فایل md
         index_status, index_detail = run_build_index(script_dir)
@@ -659,8 +661,6 @@ def convert_word_to_markdown():
             info += f"\n\nMetadata fields found: {meta_count}"
         else:
             info += "\n\nWarning: No [META] block found!"
-
-        info += f"\n\n(v{APP_VERSION})"
 
         if index_status == "ok":
             info += "\n\nbuild_index.py: executed successfully"
