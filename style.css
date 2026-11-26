@@ -703,3 +703,53 @@ footer.site-footer {
 @media (max-width: 480px) {
   .hero-title { font-size: 2rem; }
 }
+
+/* First-level Markdown quotes are highlighted; nested quotes stay quieter. */
+.block blockquote {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin: 1.2rem auto;
+  padding: 0.9rem 1.1rem;
+  border-right: 4px solid var(--accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-soft) 62%, var(--paper-raised));
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-weight: 600;
+}
+.block blockquote p {
+  margin: 0;
+  color: inherit;
+  text-align: center;
+}
+.block blockquote p + p { margin-top: 0.65rem; }
+.block blockquote blockquote {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-right-width: 2px;
+  border-right-color: var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--paper-raised) 72%, transparent);
+  box-shadow: none;
+  color: var(--ink-soft);
+  font-size: 0.94em;
+  font-weight: 400;
+}
+.block .prose blockquote p {
+  margin: 0;
+  color: inherit;
+  text-align: center;
+}
+.block .prose blockquote p + p { margin-top: 0.65rem; }
+.block .prose blockquote blockquote {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-right-width: 2px;
+  border-right-color: var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--paper-raised) 72%, transparent);
+  box-shadow: none;
+  color: var(--ink-soft);
+  font-size: 0.94em;
+  font-weight: 400;
+}
