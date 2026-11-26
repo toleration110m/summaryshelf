@@ -724,12 +724,11 @@ footer.site-footer {
 }
 .block blockquote p + p { margin-top: 0.65rem; }
 .block blockquote blockquote {
-  margin: 0.75rem 0 0;
-  padding: 0.6rem 0.85rem;
-  border-right-width: 2px;
-  border-right-color: var(--line);
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--paper-raised) 72%, transparent);
+  margin: 0.65rem 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
   color: var(--ink-soft);
   font-size: 0.94em;
@@ -742,12 +741,11 @@ footer.site-footer {
 }
 .block .prose blockquote p + p { margin-top: 0.65rem; }
 .block .prose blockquote blockquote {
-  margin: 0.75rem 0 0;
-  padding: 0.6rem 0.85rem;
-  border-right-width: 2px;
-  border-right-color: var(--line);
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--paper-raised) 72%, transparent);
+  margin: 0.65rem 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
   color: var(--ink-soft);
   font-size: 0.94em;
